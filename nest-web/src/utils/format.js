@@ -23,7 +23,30 @@ export const PERIOD_SHORT = { yearly: "a year", semester: "a semester", monthly:
 
 export const AREAS = ["Mayfair", "Lagere", "Asherifa", "Modomo", "Damico", "Parakin", "Fajuyi"];
 
-export const AMENITIES = ["water", "prepaid meter", "tiled", "fenced", "security", "wifi", "generator", "kitchen", "parking", "shared toilet"];
+// standard amenity keys from the backend. GET /listings/amenities is the source of truth;
+// this list is only used if that request fails
+export const ELECTRICITY = "24hr electricity";
+export const AMENITIES = [
+  ELECTRICITY,
+  "prepaid meter",
+  "water",
+  "generator",
+  "solar",
+  "wifi",
+  "security",
+  "fenced",
+  "tiled",
+  "kitchen",
+  "wardrobe",
+  "parking",
+  "pop ceiling",
+  "shared toilet",
+];
+
+const AMENITY_LABELS = { [ELECTRICITY]: "24hrs electricity", "pop ceiling": "POP ceiling" };
+export const amenityLabel = (key = "") => AMENITY_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
+
+export const has24Light = (listing) => !!listing?.amenities?.includes(ELECTRICITY);
 
 export const ID_TYPES = {
   nin: "National ID (NIN)",

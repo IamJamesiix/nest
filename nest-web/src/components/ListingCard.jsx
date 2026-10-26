@@ -4,8 +4,8 @@ import api, { errMsg } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import { useToast } from "../context/ToastContext";
-import { confirmedText, naira, PERIOD_SHORT, roomLabel, walkText } from "../utils/format";
-import { Icon, Photo, Rating, StatusBadge, VerifiedBadge } from "./ui";
+import { confirmedText, has24Light, naira, PERIOD_SHORT, roomLabel, walkText } from "../utils/format";
+import { Icon, LightBadge, Photo, Rating, StatusBadge, VerifiedBadge } from "./ui";
 
 // bookmark state + toggle, shared by cards and the details page
 export function useBookmark(listingId) {
@@ -51,7 +51,10 @@ export default function ListingCard({ listing, showCompare = true }) {
         <Link to={`/listings/${listing._id}`} tabIndex={-1}>
           <Photo src={listing.photos?.[0]} alt={listing.title} className="h-full w-full transition-transform duration-500 group-hover:scale-[1.03]" />
         </Link>
-        <StatusBadge status={listing.status} className="absolute left-3 top-3 shadow-sm" />
+        <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
+          <StatusBadge status={listing.status} className="shadow-sm" />
+          {has24Light(listing) && <LightBadge className="shadow-sm" />}
+        </div>
         <button
           onClick={toggle}
           disabled={busy}

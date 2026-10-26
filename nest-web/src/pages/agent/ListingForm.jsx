@@ -4,7 +4,8 @@ import api, { errMsg } from "../../api/client";
 import { ErrorNote, Icon, PageTitle, Photo, Spinner } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { AMENITIES, AREAS, cap, naira, RENT_PERIODS, ROOM_TYPES } from "../../utils/format";
+import { AREAS, ELECTRICITY, naira, RENT_PERIODS, ROOM_TYPES } from "../../utils/format";
+import useAmenities, { labelFrom } from "../../utils/useAmenities";
 import { VerificationBanner } from "./AgentDashboard";
 
 const BLANK = {
@@ -55,6 +56,7 @@ export default function ListingForm() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [customAmenity, setCustomAmenity] = useState("");
+  const amenityList = useAmenities();
 
   useEffect(() => {
     if (!editing) return;
@@ -227,19 +229,27 @@ export default function ListingForm() {
           </section>
 
           <section className="panel p-6">
-            <h2 className="mb-4 text-lg font-bold">Amenities</h2>
+            <h2 className="text-lg font-bold">Amenities</h2>
+            <p className="mb-4 mt-1 text-sm text-mut">24hrs electricity is what students filter by most. Tick it if the house has it.</p>
             <div className="flex flex-wrap gap-2">
-              {[...new Set([...AMENITIES, ...form.amenities])].map((a) => (
-                <button
-                  type="button"
-                  key={a}
-                  onClick={() => toggleAmenity(a)}
-                  aria-pressed={form.amenities.includes(a)}
-                  className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold ${form.amenities.includes(a) ? "border-teal bg-teal text-onteal" : "border-line bg-sf hover:bg-sf2"}`}
-                >
-                  {cap(a)}
-                </button>
-              ))}
+              {[...new Set([...amenityList.map((a) => a.key), ...form.amenities])].map((a) => {
+                const on = form.amenities.includes(a);
+                const light = a === ELECTRICITY;
+                return (
+                  <button
+                    type="button"
+                    key={a}
+                    onClick={() => toggleAmenity(a)}
+                    aria-pressed={on}
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-[13px] font-semibold ${
+                      on ? (light ? "border-gold bg-gold text-[#1a1405]" : "border-teal bg-teal text-onteal") : light ? "border-pdline bg-pdb text-pdt" : "border-line bg-sf hover:bg-sf2"
+                    }`}
+                  >
+                    {light && <Icon name="bolt" size={13} fill="currentColor" />}
+                    {labelFrom(amenityList, a)}
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-3 flex max-w-sm gap-2">
               <input className="input h-10" value={customAmenity} onChange={(e) => setCustomAmenity(e.target.value)} placeholder="Add another, e.g. wardrobe" />

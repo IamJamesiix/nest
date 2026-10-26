@@ -3,7 +3,8 @@ import { useSearchParams } from "react-router-dom";
 import api, { errMsg } from "../api/client";
 import ListingCard from "../components/ListingCard";
 import { EmptyState, ErrorNote, Icon, Spinner } from "../components/ui";
-import { AMENITIES, AREAS, cap, ROOM_TYPES } from "../utils/format";
+import { AREAS, cap, ELECTRICITY, ROOM_TYPES } from "../utils/format";
+import useAmenities from "../utils/useAmenities";
 
 const SORTS = {
   newest: "Newest",
@@ -31,6 +32,24 @@ function Chip({ active, onClick, children }) {
   );
 }
 
+// the most-searched filter, so it gets its own gold chip
+function LightChip({ active, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition-colors ${
+        active ? "border-gold bg-gold text-[#1a1405]" : "border-pdline bg-pdb text-pdt hover:brightness-95"
+      }`}
+    >
+      <Icon name="bolt" size={15} fill="currentColor" />
+      24hrs Electricity
+      {active && <Icon name="x" size={14} />}
+    </button>
+  );
+}
+
 function Group({ title, children }) {
   return (
     <div className="border-b border-line py-5 first:pt-0 last:border-0">
@@ -47,6 +66,8 @@ export default function Browse() {
   const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [q, setQ] = useState(params.get("q") || "");
+  const amenityList = useAmenities().filter((a) => a.key !== ELECTRICITY); // electricity has its own chip
+  const light24 = params.get("electricity24") === "true";
 
   // fetch whenever the url filters change
   useEffect(() => {
@@ -84,6 +105,10 @@ export default function Browse() {
 
   const filters = (
     <div>
+      <Group title="Electricity">
+        <LightChip active={light24} onClick={() => set("electricity24", light24 ? "" : "true")} />
+      </Group>
+
       <Group title="Max total budget">
         <div className="grid grid-cols-2 gap-2">
           <input className="input" inputMode="numeric" placeholder="Min ₦" value={params.get("minBudget") || ""} onChange={(e) => set("minBudget", e.target.value.replace(/\D/g, ""))} />
@@ -134,9 +159,9 @@ export default function Browse() {
 
       <Group title="Amenities">
         <div className="flex flex-wrap gap-2">
-          {AMENITIES.map((a) => (
-            <Chip key={a} active={listParam(params, "amenities").includes(a)} onClick={() => toggleIn("amenities", a)}>
-              {cap(a)}
+          {amenityList.map((a) => (
+            <Chip key={a.key} active={listParam(params, "amenities").includes(a.key)} onClick={() => toggleIn("amenities", a.key)}>
+              {a.label}
             </Chip>
           ))}
         </div>
@@ -184,7 +209,10 @@ export default function Browse() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="h-serif text-[clamp(34px,4vw,48px)] leading-tight">Find a house near OAU</h1>
-          <p className="mt-1.5 text-mut">{loading ? "Searching..." : `${data.total} ${data.total === 1 ? "house" : "houses"} match`}</p>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <LightChip active={light24} onClick={() => set("electricity24", light24 ? "" : "true")} />
+            <p className="text-mut">{loading ? "Searching..." : `${data.total} ${data.total === 1 ? "house" : "houses"} match`}</p>
+          </div>
         </div>
         <form
           onSubmit={(e) => {

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api, { errMsg } from "../api/client";
 import { EmptyState, ErrorNote, Icon, Photo, Spinner, StatusBadge } from "../components/ui";
 import { useCompare } from "../context/CompareContext";
-import { cap, confirmedText, naira, RENT_PERIODS, roomLabel } from "../utils/format";
+import { amenityLabel, confirmedText, ELECTRICITY, naira, RENT_PERIODS, roomLabel } from "../utils/format";
 
 const TAGS = {
   cheapest: { label: "Cheapest", cls: "bg-okb text-okt" },
@@ -57,6 +57,7 @@ export default function Compare() {
   const rows = [
     ["Total to move in", (l) => <span className="text-lg font-bold">{naira(l.totalCost)}</span>, "cheapest"],
     ["Rent", (l) => `${naira(l.rent)} (${RENT_PERIODS[l.rentPeriod]?.toLowerCase()})`],
+    ["24hrs light", (l) => (l.amenities.includes(ELECTRICITY) ? <span className="font-bold text-goldt">⚡ Yes</span> : "No")],
     ["Agency fee", (l) => (l.agencyFee ? naira(l.agencyFee) : "None")],
     ["Distance to campus", (l) => (l.distanceFromCampusKm != null ? `${l.distanceFromCampusKm} km` : "Not given"), "closest"],
     ["Rating", (l) => (l.reviewCount ? `${l.avgRating.toFixed(1)} ★ (${l.reviewCount})` : "No reviews"), "bestRated"],
@@ -128,7 +129,7 @@ export default function Compare() {
                     {allAmenities.map((a) => (
                       <li key={a} className={`flex items-center gap-2 ${l.amenities.includes(a) ? "" : "text-mut/50 line-through"}`}>
                         <Icon name={l.amenities.includes(a) ? "check" : "x"} size={14} className={l.amenities.includes(a) ? "text-okt" : ""} />
-                        {cap(a)}
+                        {amenityLabel(a)}
                       </li>
                     ))}
                   </ul>

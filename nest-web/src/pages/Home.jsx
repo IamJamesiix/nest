@@ -120,11 +120,17 @@ export default function Home() {
           </form>
 
           <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              to="/listings?electricity24=true"
+              className="inline-flex items-center gap-1.5 rounded-full border border-pdline bg-pdb px-3.5 py-2 text-[13px] font-bold text-pdt hover:brightness-95"
+            >
+              <Icon name="bolt" size={14} fill="currentColor" />
+              24hrs Electricity
+            </Link>
             {[
               ["Self-contained", "/listings?roomType=self_contained"],
               ["Under ₦150k", "/listings?maxBudget=150000"],
               ["No agency fee", "/listings?noAgencyFee=true"],
-              ["Within 1.5 km", "/listings?maxDistance=1.5"],
             ].map(([label, to]) => (
               <Link key={label} to={to} className="rounded-full border border-line bg-sf px-3.5 py-2 text-[13px] font-medium hover:bg-sf2">
                 {label}

@@ -3,11 +3,12 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import api, { errMsg } from "../api/client";
 import { useBookmark } from "../components/ListingCard";
 import ReportModal from "../components/ReportModal";
-import { Avatar, EmptyState, ErrorNote, Icon, Photo, Rating, Spinner, Stars, StatusBadge, VerifiedBadge } from "../components/ui";
+import { Avatar, EmptyState, ErrorNote, Icon, LightBadge, Photo, Rating, Spinner, Stars, StatusBadge, VerifiedBadge } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import { useToast } from "../context/ToastContext";
-import { cap, confirmedText, fmtDate, naira, RENT_PERIODS, roomLabel, walkText } from "../utils/format";
+import { confirmedText, ELECTRICITY, fmtDate, has24Light, naira, RENT_PERIODS, roomLabel, walkText } from "../utils/format";
+import useAmenities, { labelFrom } from "../utils/useAmenities";
 
 const TIMES = ["9:00", "11:00", "13:00", "15:00", "16:30"];
 const timeLabel = (t) => {
@@ -303,6 +304,7 @@ export default function ListingDetails() {
   const [error, setError] = useState("");
   const [photo, setPhoto] = useState(0);
   const [reporting, setReporting] = useState(false);
+  const amenityList = useAmenities();
 
   const load = () =>
     api
@@ -363,6 +365,7 @@ export default function ListingDetails() {
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={listing.status} />
+            {has24Light(listing) && <LightBadge />}
             <span className="rounded-full border border-line bg-sf px-3 py-1 text-xs font-semibold text-mut">{confirmedText(listing.lastConfirmedAt)} by the agent</span>
           </div>
           <h1 className="h-serif mt-3 text-[clamp(32px,4vw,50px)] leading-[1.08]">{listing.title}</h1>
@@ -418,11 +421,14 @@ export default function ListingDetails() {
               <h2 className="h-serif text-[28px]">Facilities and amenities</h2>
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {listing.amenities.map((a) => (
-                  <div key={a} className="flex items-center gap-3 rounded-2xl bg-sf2 px-4 py-3 text-sm font-semibold">
-                    <span className="grid h-7 w-7 place-items-center rounded-lg bg-sf text-tealt">
-                      <Icon name="check" size={16} />
+                  <div
+                    key={a}
+                    className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold ${a === ELECTRICITY ? "bg-pdb text-pdt" : "bg-sf2"}`}
+                  >
+                    <span className={`grid h-7 w-7 place-items-center rounded-lg bg-sf ${a === ELECTRICITY ? "text-goldt" : "text-tealt"}`}>
+                      <Icon name={a === ELECTRICITY ? "bolt" : "check"} size={16} />
                     </span>
-                    {cap(a)}
+                    {labelFrom(amenityList, a)}
                   </div>
                 ))}
               </div>

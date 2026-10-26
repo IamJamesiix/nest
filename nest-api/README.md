@@ -54,6 +54,7 @@ Agents can only create listings after an admin approves them.
 | Method | Route | Who | Body / notes |
 |---|---|---|---|
 | GET | /listings | anyone | search + filters (below) |
+| GET | /listings/amenities | anyone | standard amenities (for filter checkboxes) + how many houses have each |
 | GET | /listings/compare?ids=a,b,c | anyone | 2–4 houses side by side + cheapest/closest/best rated |
 | GET | /listings/:id | anyone | listing + full cost breakdown |
 | GET | /listings/:id/cost?split=2 | anyone | fee breakdown, total, cost per person if sharing |
@@ -69,8 +70,10 @@ Agents can only create listings after an admin approves them.
 `totalCost` is calculated automatically. `updatedAt` = last updated, `lastConfirmedAt` = last confirmed by agent.
 
 **Search filters for GET /listings:**
-`maxBudget, minBudget, area` (comma list), `maxDistance` (km), `roomType` (comma list), `bedrooms, minBedrooms, amenities` (comma list, must have all), `maxAgencyFee, noAgencyFee=true, shared=true|false, rentPeriod, status, q` (text search), `sort` (newest, price_asc, price_desc, distance, rating), `page, limit`.
+`maxBudget, minBudget, area` (comma list), `maxDistance` (km), `roomType` (comma list), `bedrooms, minBedrooms, amenities` (comma list, must have all), `electricity24=true` (only houses with 24hrs electricity), `maxAgencyFee, noAgencyFee=true, shared=true|false, rentPeriod, status, q` (text search), `sort` (newest, price_asc, price_desc, distance, rating), `page, limit`.
 Expired and rented houses are hidden unless you pass `status`.
+
+**Amenities:** standard keys are `24hr electricity, prepaid meter, water, generator, solar, wifi, security, fenced, tiled, kitchen, wardrobe, parking, pop ceiling, shared toilet`. Different wordings are converted automatically, so "24/7 light", "24 hours electricity" and "constant power" are all saved and searched as `24hr electricity`.
 
 **Expiry:** listings not reconfirmed within `LISTING_EXPIRY_DAYS` (default 30) become `expired` automatically (checked on startup and every hour).
 

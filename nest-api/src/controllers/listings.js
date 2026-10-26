@@ -1,5 +1,6 @@
 import Listing from "../models/Listing.js";
 import { AppError, toArray, escapeRegex, fileUrl } from "../utils/helpers.js";
+import { AMENITIES, normalizeAmenities } from "../utils/amenities.js";
 
 // fields an agent is allowed to set
 const EDITABLE = [
@@ -11,7 +12,7 @@ const EDITABLE = [
 const pickFields = (body = {}) => {
   const data = {};
   for (const key of EDITABLE) if (body[key] !== undefined) data[key] = body[key];
-  if (data.amenities !== undefined) data.amenities = toArray(data.amenities);
+  if (data.amenities !== undefined) data.amenities = normalizeAmenities(data.amenities);
   if (data.photos !== undefined && !Array.isArray(data.photos)) data.photos = [data.photos];
   return data;
 };
@@ -120,6 +121,17 @@ export const myListings = async (req, res) => {
 
 // ---------------- public / student side ----------------
 
+// GET /api/listings/amenities  -> standard list for the filter checkboxes + how many live houses have each
+export const amenityList = async (req, res) => {
+  const counts = await Listing.aggregate([
+    { $match: { status: { $in: ["available", "pending"] } } },
+    { $unwind: "$amenities" },
+    { $group: { _id: "$amenities", count: { $sum: 1 } } },
+  ]);
+  const map = Object.fromEntries(counts.map((c) => [c._id, c.count]));
+  res.json({ amenities: AMENITIES.map((a) => ({ ...a, count: map[a.key] || 0 })) });
+};
+
 // GET /api/listings?maxBudget=&minBudget=&area=&maxDistance=&roomType=&bedrooms=&minBedrooms=&amenities=&maxAgencyFee=&noAgencyFee=&shared=&rentPeriod=&status=&q=&sort=&page=&limit=
 export const searchListings = async (req, res) => {
   const q = req.query;
@@ -142,7 +154,8 @@ export const searchListings = async (req, res) => {
   if (q.roomType) filter.roomType = { $in: toArray(q.roomType) };
   if (q.bedrooms) filter.bedrooms = Number(q.bedrooms);
   if (q.minBedrooms) filter.bedrooms = { $gte: Number(q.minBedrooms) };
-  if (q.amenities) filter.amenities = { $all: toArray(q.amenities) };
+  if (q.amenities) filter.amenities = { $all: normalizeAmenities(q.amenities) };
+  if (q.electricity24 === "true") filter.amenities = { ...(filter.amenities || {}), $all: [...new Set([...(filter.amenities?.$all || []), "24hr electricity"])] };
   if (q.maxAgencyFee) filter.agencyFee = { $lte: Number(q.maxAgencyFee) };
   if (q.noAgencyFee === "true") filter.agencyFee = 0;
   if (q.shared === "true") filter.isShared = true;

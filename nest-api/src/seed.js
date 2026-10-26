@@ -8,6 +8,7 @@ import Inspection from "./models/Inspection.js";
 import Review from "./models/Review.js";
 import RoommateProfile from "./models/RoommateProfile.js";
 import Report from "./models/Report.js";
+import { normalizeAmenities } from "./utils/amenities.js";
 
 const days = (n) => new Date(Date.now() + n * 86400000);
 const photo = (seed) => [`https://picsum.photos/seed/${seed}a/800/600`, `https://picsum.photos/seed/${seed}b/800/600`];
@@ -39,19 +40,19 @@ const student3 = await User.create({ name: "Daniel Okafor", email: "daniel@nest.
 
 // listings - using .create one by one so totalCost is calculated
 const raw = [
-  { agent: agent._id, title: "Neat self-con at Mayfair", area: "Mayfair", address: "Off Mayfair junction", distanceFromCampusKm: 1.2, roomType: "self_contained", bedrooms: 1, amenities: ["water", "prepaid meter", "tiled", "fenced"], rent: 180000, agencyFee: 20000, legalFee: 10000, cautionFee: 10000, description: "Clean self-contained room, close to the school gate." },
+  { agent: agent._id, title: "Neat self-con at Mayfair", area: "Mayfair", address: "Off Mayfair junction", distanceFromCampusKm: 1.2, roomType: "self_contained", bedrooms: 1, amenities: ["water", "prepaid meter", "tiled", "fenced", "24hr electricity"], rent: 180000, agencyFee: 20000, legalFee: 10000, cautionFee: 10000, description: "Clean self-contained room, close to the school gate." },
   { agent: agent._id, title: "Single room, walking distance to campus", area: "Lagere", distanceFromCampusKm: 2.5, roomType: "single_room", bedrooms: 1, amenities: ["water", "shared toilet"], rent: 80000, agencyFee: 10000, description: "Budget single room, shared toilet and kitchen." },
   { agent: agent._id, title: "Room and parlour, Asherifa", area: "Asherifa", distanceFromCampusKm: 3.8, roomType: "room_and_parlour", bedrooms: 1, amenities: ["water", "prepaid meter", "parking", "security"], rent: 250000, agencyFee: 25000, legalFee: 15000, serviceCharge: 10000, description: "Spacious room and parlour in a quiet compound." },
-  { agent: agent2._id, title: "2-bedroom flat for sharing (2 spaces left)", area: "Modomo", distanceFromCampusKm: 4.1, roomType: "shared_apartment", bedrooms: 2, spacesForRoommates: 2, amenities: ["water", "wifi", "prepaid meter", "kitchen"], rent: 360000, agencyFee: 30000, cautionFee: 20000, description: "Share a 2-bedroom flat with other OAU students. Rent split between occupants." },
-  { agent: agent2._id, title: "Mini flat near Damico", area: "Damico", distanceFromCampusKm: 2.0, roomType: "mini_flat", bedrooms: 1, amenities: ["water", "prepaid meter", "tiled", "fenced", "security"], rent: 300000, agencyFee: 0, legalFee: 15000, otherFees: [{ name: "Waste disposal", amount: 5000 }], description: "No agency fee! Direct from landlord through our office." },
-  { agent: agent2._id, title: "Hostel bedspace, Parakin", area: "Parakin", distanceFromCampusKm: 5.5, roomType: "hostel", bedrooms: 1, isShared: true, amenities: ["water", "generator", "security"], rent: 120000, rentPeriod: "semester", agencyFee: 5000, description: "Bedspace in a student hostel, paid per semester." },
+  { agent: agent2._id, title: "2-bedroom flat for sharing (2 spaces left)", area: "Modomo", distanceFromCampusKm: 4.1, roomType: "shared_apartment", bedrooms: 2, spacesForRoommates: 2, amenities: ["borehole", "wifi", "prepaid meter", "kitchen", "24/7 light", "solar"], rent: 360000, agencyFee: 30000, cautionFee: 20000, description: "Share a 2-bedroom flat with other OAU students. Rent split between occupants." },
+  { agent: agent2._id, title: "Mini flat near Damico", area: "Damico", distanceFromCampusKm: 2.0, roomType: "mini_flat", bedrooms: 1, amenities: ["water", "prepaid meter", "tiled", "fenced", "security", "24 hours electricity"], rent: 300000, agencyFee: 0, legalFee: 15000, otherFees: [{ name: "Waste disposal", amount: 5000 }], description: "No agency fee! Direct from landlord through our office." },
+  { agent: agent2._id, title: "Hostel bedspace, Parakin", area: "Parakin", distanceFromCampusKm: 5.5, roomType: "hostel", bedrooms: 1, isShared: true, amenities: ["water", "generator", "security", "constant power supply"], rent: 120000, rentPeriod: "semester", agencyFee: 5000, description: "Bedspace in a student hostel, paid per semester." },
   { agent: agent._id, title: "Self-con at Fajuyi (just rented)", area: "Fajuyi", distanceFromCampusKm: 3.0, roomType: "self_contained", bedrooms: 1, amenities: ["water", "prepaid meter"], rent: 200000, agencyFee: 20000, status: "rented", description: "Already taken, kept to show the rented status." },
   { agent: agent._id, title: "Old listing - not reconfirmed", area: "Lagere", distanceFromCampusKm: 2.7, roomType: "single_room", bedrooms: 1, amenities: ["water"], rent: 70000, agencyFee: 10000, description: "This one will show as expired because the agent hasn't reconfirmed it in 30+ days.", lastConfirmedAt: days(-45) },
 ];
 
 const listings = [];
 for (const [i, l] of raw.entries()) {
-  listings.push(await Listing.create({ photos: photo(`nest${i}`), lastConfirmedAt: new Date(), ...l }));
+  listings.push(await Listing.create({ photos: photo(`nest${i}`), lastConfirmedAt: new Date(), ...l, amenities: normalizeAmenities(l.amenities) }));
 }
 // mark the old one expired straight away (the hourly job would do this too)
 await Listing.updateOne({ _id: listings[7]._id }, { status: "expired" });

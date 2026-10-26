@@ -59,10 +59,11 @@ r = await call("PATCH", `/admin/agents/${newAgentId}/verify`, { token: admin, bo
 check("admin approves agent", r.data.agent?.agentInfo.verificationStatus === "approved");
 
 console.log("\nLISTINGS");
-r = await call("POST", "/listings", { token: newAgentToken, body: { title: "Test self-con", area: "Mayfair", roomType: "self_contained", rent: 150000, agencyFee: 15000, legalFee: 5000, otherFees: [{ name: "Water", amount: 2000 }], amenities: "water, wifi", lat: 7.5, lng: 4.53 } });
+r = await call("POST", "/listings", { token: newAgentToken, body: { title: "Test self-con", area: "Mayfair", roomType: "self_contained", rent: 150000, agencyFee: 15000, legalFee: 5000, otherFees: [{ name: "Water", amount: 2000 }], amenities: "water, wifi, 24hrs light", lat: 7.5, lng: 4.53 } });
 check("verified agent creates listing", r.status === 201);
 check("total cost auto-calculated (172000)", r.data.listing?.totalCost === 172000, `got ${r.data.listing?.totalCost}`);
 check("distance auto-calculated from lat/lng", typeof r.data.listing?.distanceFromCampusKm === "number");
+check("agent's '24hrs light' saved as '24hr electricity'", r.data.listing?.amenities.includes("24hr electricity"));
 const myListingId = r.data.listing?._id;
 r = await call("PATCH", `/listings/${myListingId}`, { token: agent, body: { rent: 1 } });
 check("agent can't edit someone else's listing", r.status === 403);
@@ -92,6 +93,13 @@ r = await call("GET", "/listings?roomType=self_contained,mini_flat");
 check("filter: room type", r.data.listings.every((l) => ["self_contained", "mini_flat"].includes(l.roomType)));
 r = await call("GET", "/listings?amenities=water,prepaid meter");
 check("filter: amenities", r.data.total > 0 && r.data.listings.every((l) => l.amenities.includes("prepaid meter")));
+r = await call("GET", "/listings?amenities=24hr electricity");
+check("filter: 24hrs electricity", r.data.total >= 3 && r.data.listings.every((l) => l.amenities.includes("24hr electricity")), `got ${r.data.total}`);
+const via247 = (await call("GET", "/listings?amenities=" + encodeURIComponent("24/7 light"))).data.total;
+const viaFlag = (await call("GET", "/listings?electricity24=true")).data.total;
+check("'24/7 light' and electricity24=true find the same houses", via247 === r.data.total && viaFlag === r.data.total, `${via247} ${viaFlag} ${r.data.total}`);
+r = await call("GET", "/listings/amenities");
+check("amenity list for filter checkboxes", r.data.amenities?.[0]?.key === "24hr electricity" && r.data.amenities[0].count >= 3);
 r = await call("GET", "/listings?noAgencyFee=true");
 check("filter: no agency fee", r.data.total > 0 && r.data.listings.every((l) => l.agencyFee === 0));
 r = await call("GET", "/listings?shared=true");

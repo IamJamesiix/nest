@@ -1,7 +1,7 @@
 import { Router } from "express";
 import {
   createListing, updateListing, deleteListing, uploadPhotos, updateStatus, reconfirmListing,
-  myListings, searchListings, compareListings, getListing, getCost,
+  myListings, searchListings, compareListings, getListing, getCost, amenityList,
 } from "../controllers/listings.js";
 import { listingReviews, addReview, editReview, deleteReview } from "../controllers/reviews.js";
 import { protect, allow, verifiedAgent } from "../middleware/auth.js";
@@ -12,6 +12,7 @@ const router = Router();
 // public (anyone can browse)
 router.get("/", searchListings);
 router.get("/compare", compareListings);
+router.get("/amenities", amenityList);
 
 // agent (these must come before "/:id")
 router.get("/agent/mine", protect, allow("agent"), myListings);

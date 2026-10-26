@@ -21,6 +21,13 @@ Demo logins (password for all: `password123`):
 | Agent waiting for verification | pending@nest.com |
 | Student | student@nest.com, amaka@nest.com, daniel@nest.com |
 
+### Google sign-in setup
+1. Go to Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → **Web application**.
+2. Under **Authorized JavaScript origins** add `http://localhost:5173` (and your deployed frontend URL later). No redirect URI is needed.
+3. Copy the Client ID into `GOOGLE_CLIENT_ID` in `.env` (backend) and `VITE_GOOGLE_CLIENT_ID` (frontend). Same value for both.
+
+Signing in with Google creates the account on first use (with the role picked on the frontend). If an email/password account with the same email already exists, Google gets linked to it.
+
 Protected routes need the header `Authorization: Bearer <token>` (token comes from login/register).
 
 ## Endpoints (all start with `/api`)
@@ -30,6 +37,7 @@ Protected routes need the header `Authorization: Bearer <token>` (token comes fr
 |---|---|---|---|
 | POST | /auth/register | anyone | `name, email, password, phone, role: "student" or "agent", businessName?` |
 | POST | /auth/login | anyone | `email, password` → `{ token, user }` |
+| POST | /auth/google | anyone | `credential` (ID token from the Google button), `role: "student" or "agent"` (only used on first sign-up) → `{ isNew, token, user }` |
 | GET | /auth/me | logged in | current user |
 | PATCH | /auth/me | logged in | `name, phone, businessName, officeAddress` |
 

@@ -24,14 +24,6 @@ app.use(morgan("dev"));
 
 app.use("/uploads", express.static(path.resolve("uploads")));
 
- app.get("/", (req, res) => {
-  res.json({
-    app: "Nest API",
-    message: "Student off-campus house finder backend is running",
-    try: ["/api/health", "/api/listings"],
-  });
-});
-
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", app: "Nest" });
 });

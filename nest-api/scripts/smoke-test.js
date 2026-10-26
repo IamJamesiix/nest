@@ -32,6 +32,10 @@ r = await call("POST", "/auth/register", { body: { name: "Sneaky", email: `x${Da
 check("nobody can register as admin", r.status === 400);
 r = await call("POST", "/auth/login", { body: { email: "student@nest.com", password: "wrong" } });
 check("wrong password rejected", r.status === 401);
+r = await call("POST", "/auth/google", { body: {} });
+check("google: missing credential rejected", r.status === 400);
+r = await call("POST", "/auth/google", { body: { credential: "fake.google.token" } });
+check("google: fake token rejected", r.status === 401 || r.status === 500, `status ${r.status}`);
 
 const student = await login("student@nest.com");
 const agent = await login("agent@nest.com");

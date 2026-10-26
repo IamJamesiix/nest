@@ -27,7 +27,16 @@ const userSchema = new mongoose.Schema(
     name: { type: String, required: [true, "Name is required"], trim: true },
     email: { type: String, required: [true, "Email is required"], unique: true, lowercase: true, trim: true },
     phone: { type: String, trim: true },
-    password: { type: String, required: [true, "Password is required"], minlength: [6, "Password must be at least 6 characters"], select: false },
+    // password is only required for email/password accounts (Google accounts don't have one)
+    password: {
+      type: String,
+      required: [function () { return !this.googleId; }, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters"],
+      select: false,
+    },
+    googleId: { type: String, unique: true, sparse: true },
+    avatar: String,
+    authProviders: { type: [String], default: ["local"] }, // "local", "google" or both
     // "student" is the house finder
     role: { type: String, enum: ["student", "agent", "admin"], default: "student" },
     isBanned: { type: Boolean, default: false },
@@ -47,6 +56,7 @@ userSchema.pre("save", async function () {
 });
 
 userSchema.methods.checkPassword = function (plain) {
+  if (!this.password) return false; // google-only account
   return bcrypt.compare(plain, this.password);
 };
 
@@ -54,6 +64,7 @@ userSchema.methods.checkPassword = function (plain) {
 userSchema.set("toJSON", {
   transform: (doc, ret) => {
     delete ret.password;
+    delete ret.googleId;
     delete ret.__v;
     return ret;
   },

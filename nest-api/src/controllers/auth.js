@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import { AppError } from "../utils/helpers.js";
+import { verifyGoogleToken, findOrCreateGoogleUser } from "../utils/google.js";
 
 const makeToken = (user) =>
   jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
@@ -17,7 +18,12 @@ export const register = async (req, res) => {
   if (!name || !email || !password) throw new AppError("Name, email and password are required", 400);
 
   const exists = await User.findOne({ email: String(email).toLowerCase() });
-  if (exists) throw new AppError("An account with this email already exists", 409);
+  if (exists) {
+    const msg = exists.googleId && !exists.authProviders.includes("local")
+      ? "This email is already registered with Google. Use 'Continue with Google' instead."
+      : "An account with this email already exists";
+    throw new AppError(msg, 409);
+  }
 
   const data = { name, email, phone, password, role };
   if (role === "agent") data.agentInfo = { businessName, officeAddress, verificationStatus: "not_submitted" };
@@ -36,6 +42,9 @@ export const login = async (req, res) => {
   if (!email || !password) throw new AppError("Email and password are required", 400);
 
   const user = await User.findOne({ email: String(email).toLowerCase() }).select("+password");
+  if (user && !user.password && user.googleId) {
+    throw new AppError("This account uses Google sign-in. Click 'Continue with Google'.", 400);
+  }
   if (!user || !(await user.checkPassword(password))) {
     throw new AppError("Wrong email or password", 401);
   }
@@ -60,4 +69,23 @@ export const updateMe = async (req, res) => {
   }
   await req.user.save();
   res.json({ user: req.user });
+};
+
+// POST /api/auth/google  { credential, role?: "student" | "agent" }
+// credential = the ID token the frontend gets from the Google button
+// role is only used the first time (sign up). existing users keep their role.
+export const googleAuth = async (req, res) => {
+  const { credential, role = "student" } = req.body || {};
+  if (!credential) throw new AppError("Google credential is required", 400);
+
+  const payload = await verifyGoogleToken(credential);
+  const { user, isNew } = await findOrCreateGoogleUser(payload, role);
+  if (user.isBanned) throw new AppError("This account has been banned", 403);
+
+  res.status(isNew ? 201 : 200).json({
+    message: isNew ? (user.role === "agent" ? "Agent account created. Submit your verification to start listing houses." : "Account created") : "Signed in",
+    isNew,
+    token: makeToken(user),
+    user,
+  });
 };

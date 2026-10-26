@@ -2,13 +2,23 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 // ---------- logo ----------
-// a roof sitting on a nest curve
-export function LogoMark({ size = 36 }) {
+// the Nest mark: a house outline shaped like a lowercase "n"
+const MARK_PATH =
+  "M4377 9555 c-195 -37 -366 -118 -517 -244 -413 -345 -3199 -2811 -3352 -2967 -251 -256 -444 -542 -492 -731 -26 -98 -19 -4544 7 -4646 98 -392 329 -685 668 -847 231 -110 321 -122 849 -118 l405 3 75 27 c177 65 313 201 378 379 l27 74 6 1950 c5 1946 5 1950 27 2062 184 952 971 1592 1922 1560 963 -32 1736 -774 1810 -1737 6 -86 10 -804 10 -1965 0 -1603 2 -1838 15 -1890 55 -216 228 -391 440 -445 105 -27 803 -30 951 -5 529 92 931 499 1009 1024 13 87 15 395 13 2393 l-3 2293 -23 108 c-55 260 -158 477 -321 679 -60 75 -2899 2705 -3047 2823 -122 98 -255 162 -423 206 -104 27 -327 34 -434 14z";
+
+export function LogoMark({ size = 30, light = false }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <rect width="40" height="40" rx="12" fill="#0F4C5C" />
-      <path d="M10 19.5 20 11l10 8.5" fill="none" stroke="#E3B23C" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M12 25.5c2.4 3 5 4.5 8 4.5s5.6-1.5 8-4.5" fill="none" stroke="#F8F7F4" strokeWidth="3" strokeLinecap="round" />
+    <svg
+      width={Math.round(size * 0.9)}
+      height={size}
+      viewBox="0 0 863 957"
+      className={light ? "text-gold" : "text-tealt"}
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <g transform="translate(0,957) scale(0.1,-0.1)">
+        <path d={MARK_PATH} />
+      </g>
     </svg>
   );
 }
@@ -16,7 +26,7 @@ export function LogoMark({ size = 36 }) {
 export function Logo({ light = false, to = "/" }) {
   return (
     <Link to={to} className={`flex items-center gap-2.5 text-lg font-bold ${light ? "text-onteal" : "text-ink"}`}>
-      <LogoMark />
+      <LogoMark light={light} />
       Nest
     </Link>
   );

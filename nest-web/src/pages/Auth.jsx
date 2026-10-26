@@ -37,7 +37,7 @@ function AuthShell({ title, text, children }) {
   return (
     <div className="mx-auto grid max-w-[1100px] items-center gap-10 px-6 py-12 lg:grid-cols-2">
       <div className="hidden rounded-[32px] bg-teal p-10 text-onteal lg:block">
-        <LogoMark size={48} />
+        <LogoMark size={48} light />
         <h2 className="h-serif mt-8 text-[40px] leading-tight">Find your place around OAU without the runaround.</h2>
         <ul className="mt-8 space-y-4 text-onteal/80">
           <li>Every agent is checked with a real ID.</li>

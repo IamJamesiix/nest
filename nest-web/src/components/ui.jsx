@@ -169,7 +169,9 @@ export function HouseArt({ tone = "var(--art-sky)" }) {
 
 export function Photo({ src, alt = "", className = "", tone }) {
   const [failed, setFailed] = useState(false);
-  useEffect(() => setFailed(false), [src]);
+  useEffect(() => {
+  setFailed(false);
+}, [src]);
   if (!src || failed) {
     return (
       <div className={`overflow-hidden ${className}`}>

@@ -7,11 +7,13 @@
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/seed.js",
-    "test:api": "node scripts/smoke-test.js"
+    "test:api": "node scripts/smoke-test.js",
+    "create-admin": "node scripts/create-admin.js",
+    "db:clear": "node scripts/clear-db.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.11.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^5.1.0",
@@ -24,5 +26,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

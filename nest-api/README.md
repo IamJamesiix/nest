@@ -6,29 +6,36 @@ Student off-campus house finder (SWEP project). Node.js + Express 5 + MongoDB.
 
 ```bash
 npm install
-# put your MongoDB link in .env (MONGO_URI)
-npm run seed      # demo data (wipes the database first)
-npm run dev       # http://localhost:5000
-npm run test:api  # in a second terminal, checks every feature
+cp .env.example .env     # then fill in MONGO_URI, JWT_SECRET, GOOGLE_CLIENT_ID (and CLOUDINARY_URL for permanent uploads)
+npm run create-admin -- --name "Your Name" --email you@example.com --password "strong-password"
+npm run dev              # http://localhost:5000
+npm run test:api         # in a second terminal: checks every feature, then deletes all its test data
 ```
 
-Demo logins (password for all: `password123`):
+There is **no demo data**. Real students and agents sign up through the app.
 
-| Role | Email |
+| Command | What it does |
 |---|---|
-| Admin | admin@nest.com |
-| Verified agent | agent@nest.com, agent2@nest.com |
-| Agent waiting for verification | pending@nest.com |
-| Student | student@nest.com, amaka@nest.com, daniel@nest.com |
+| `npm run create-admin -- --name "N" --email e --password p` | creates an admin, or promotes an existing account (`--email` alone is enough to promote, e.g. someone who signed up with Google) |
+| `npm run db:clear -- --yes` | deletes **everything** in the database (no undo) |
+| `npm run test:api` | 96 checks; uses temporary `@nest-test.dev` accounts and removes them at the end. `API_URL` and `MONGO_URI` must point at the same database |
 
-### Google sign-in setup
-1. Go to Google Cloud Console → APIs & Services → Credentials → Create credentials → OAuth client ID → **Web application**.
-2. Under **Authorized JavaScript origins** add `http://localhost:5173` (and your deployed frontend URL later). No redirect URI is needed.
-3. Copy the Client ID into `GOOGLE_CLIENT_ID` in `.env` (backend) and `VITE_GOOGLE_CLIENT_ID` (frontend). Same value for both.
+## Who can be what
 
-Signing in with Google creates the account on first use (with the role picked on the frontend). If an email/password account with the same email already exists, Google gets linked to it.
+- **Student / agent:** chosen at sign-up (`role`). The backend only accepts `student` or `agent`.
+- **Admin:** nobody can sign up as admin. Admins are made with `npm run create-admin`, or by an existing admin (`POST /admin/admins`, `PATCH /admin/users/:id/role`). The last admin can't be removed, and an admin can't remove their own admin role.
 
-Protected routes need the header `Authorization: Bearer <token>` (token comes from login/register).
+## Google sign-in setup
+1. Google Cloud Console → APIs & Services → Credentials → OAuth client ID → **Web application**.
+2. **Authorized JavaScript origins:** `http://localhost:5173` plus your deployed frontend URL.
+3. Use the same Client ID in `GOOGLE_CLIENT_ID` (backend) and `VITE_GOOGLE_CLIENT_ID` (frontend).
+
+## File storage (photos, videos, ID documents)
+- With `CLOUDINARY_URL` set, files go to Cloudinary and are permanent. **Needed on Render**, where local files are wiped on restart.
+- Without it, files are kept in `uploads/` (fine for local development).
+- Limits: photos jpg/png/webp up to 5MB (max 15 per listing); videos mp4/mov/webm/3gp up to `MAX_VIDEO_MB` (default 50MB, max 5 per listing); ID documents image/pdf up to 5MB.
+
+Protected routes need `Authorization: Bearer <token>`. Errors are always `{ "message": "..." }`.
 
 ## Endpoints (all start with `/api`)
 
@@ -37,95 +44,71 @@ Protected routes need the header `Authorization: Bearer <token>` (token comes fr
 |---|---|---|---|
 | POST | /auth/register | anyone | `name, email, password, phone, role: "student" or "agent", businessName?` |
 | POST | /auth/login | anyone | `email, password` → `{ token, user }` |
-| POST | /auth/google | anyone | `credential` (ID token from the Google button), `role: "student" or "agent"` (only used on first sign-up) → `{ isNew, token, user }` |
-| GET | /auth/me | logged in | current user |
-| PATCH | /auth/me | logged in | `name, phone, businessName, officeAddress` |
+| POST | /auth/google | anyone | `credential`, `role` (first sign-up only) → `{ isNew, token, user }` |
+| GET / PATCH | /auth/me | logged in | get / update `name, phone, businessName, officeAddress` |
 
-### Agent verification (how we confirm real agents)
+### Agent verification
 | Method | Route | Who | Body / notes |
 |---|---|---|---|
-| POST | /agents/verification | agent | multipart form: `idType` (nin, drivers_license, voters_card, passport, cac), `idNumber`, `cacNumber?`, file `idDocument` |
+| POST | /agents/verification | agent | multipart: `idType` (nin, drivers_license, voters_card, passport, cac), `idNumber`, `cacNumber?`, file `idDocument` |
 | GET | /agents/verification | agent | my status: not_submitted / pending / approved / rejected |
-| GET | /agents/:id | anyone | public agent profile, verified badge, rating, listings |
-
-Agents can only create listings after an admin approves them.
+| GET | /agents/:id | anyone | public profile, verified badge, rating, listings |
 
 ### Listings
-| Method | Route | Who | Body / notes |
+| Method | Route | Who | Notes |
 |---|---|---|---|
-| GET | /listings | anyone | search + filters (below) |
-| GET | /listings/amenities | anyone | standard amenities (for filter checkboxes) + how many houses have each |
-| GET | /listings/compare?ids=a,b,c | anyone | 2–4 houses side by side + cheapest/closest/best rated |
-| GET | /listings/:id | anyone | listing + full cost breakdown |
-| GET | /listings/:id/cost?split=2 | anyone | fee breakdown, total, cost per person if sharing |
-| GET | /listings/agent/mine | agent | my listings, with `expiresAt` and `needsReconfirm` |
-| POST | /listings | verified agent | see listing fields below |
-| PATCH | /listings/:id | owner agent | any listing fields (also counts as reconfirming) |
-| DELETE | /listings/:id | owner agent / admin | |
-| POST | /listings/:id/photos | owner agent | multipart, field `photos` (up to 8 images, 5MB each) |
-| PATCH | /listings/:id/status | owner agent | `status: available / pending / rented` |
-| PATCH | /listings/:id/reconfirm | owner agent | "still available" — brings an expired listing back |
+| GET | /listings | anyone | search (below) |
+| GET | /listings/areas/nearby?lat=&lng=&radiusKm=10 | anyone | areas with houses near the user, nearest first: `{ area, houses, nearestKm, cheapestTotal, lat, lng }` |
+| GET | /listings/amenities | anyone | standard amenities + counts (24hrs electricity first) |
+| GET | /listings/compare?ids=a,b,c | anyone | 2–4 houses side by side |
+| GET | /listings/:id | anyone | listing (with `photos`, `videos`) + cost breakdown |
+| GET | /listings/:id/cost?split=2 | anyone | fee breakdown, total, per person |
+| GET | /listings/agent/mine | agent | my listings + `expiresAt`, `needsReconfirm` |
+| POST | /listings | verified agent | listing fields (below) |
+| PATCH | /listings/:id | owner | any listing fields |
+| DELETE | /listings/:id | owner / admin | |
+| POST | /listings/:id/media | owner | multipart: `photos` (up to 8 per upload) and/or `videos` (up to 3 per upload). `/photos` and `/videos` work too |
+| DELETE | /listings/:id/media | owner | `{ url }`: remove one photo or video |
+| PATCH | /listings/:id/status | owner | `available / pending / rented` |
+| PATCH | /listings/:id/reconfirm | owner | brings an expired listing back |
 
-**Listing fields:** `title, description, photos[], area, address, lat, lng` (distance from campus is calculated automatically) or `distanceFromCampusKm`, `roomType` (self_contained, single_room, room_and_parlour, mini_flat, flat, shared_apartment, hostel), `bedrooms, bathrooms, isShared, spacesForRoommates, amenities` (array or "water, wifi"), `rent, rentPeriod` (yearly, semester, monthly), `agencyFee, legalFee, cautionFee, serviceCharge, otherFees: [{ name, amount }]`.
-`totalCost` is calculated automatically. `updatedAt` = last updated, `lastConfirmedAt` = last confirmed by agent.
+**Listing fields:**
+- **Required:** `title`, `roomType`, `rent`, **`lat` + `lng`** (exact GPS of the house) and **`electricity24`** (true/false, compulsory).
+- **Optional:** `description, area` (display label), `address, landmark, bedrooms, bathrooms, isShared, spacesForRoommates, amenities, rentPeriod, agencyFee, legalFee, cautionFee, serviceCharge, otherFees: [{ name, amount }]`.
+- **Calculated automatically:** `totalCost`, `distanceFromCampusKm`, and the `"24hr electricity"` amenity (kept in sync with `electricity24`).
 
-**Search filters for GET /listings:**
-`maxBudget, minBudget, area` (comma list), `maxDistance` (km), `roomType` (comma list), `bedrooms, minBedrooms, amenities` (comma list, must have all), `electricity24=true` (only houses with 24hrs electricity), `maxAgencyFee, noAgencyFee=true, shared=true|false, rentPeriod, status, q` (text search), `sort` (newest, price_asc, price_desc, distance, rating), `page, limit`.
-Expired and rented houses are hidden unless you pass `status`.
+**Search (GET /listings), all optional:**
+- **Near me:** `lat, lng` (or `near=lat,lng`), `radiusKm` (default 5, max 50). Each result gets `distanceFromYouKm`, sorted nearest first.
+- **Budget:** `minBudget, maxBudget`. Every house from the minimum up to the maximum, **both included**, sorted cheapest first by default. Swapped values are fixed automatically. `budgetOn=total` (default, the full move-in cost) or `rent`.
+- **Other filters:** `electricity24=true`, `hasVideo=true`, `area, maxDistance` (from campus), `roomType, bedrooms, minBedrooms, amenities, maxAgencyFee, noAgencyFee=true, shared, rentPeriod, status, q`.
+- **Sort and pages:** `sort` = nearest, price_asc, price_desc, distance, rating, newest. `page, limit` (max 100).
+- Every sort has a fixed tie-breaker, so results never change order between requests or pages.
 
-**Amenities:** standard keys are `24hr electricity, prepaid meter, water, generator, solar, wifi, security, fenced, tiled, kitchen, wardrobe, parking, pop ceiling, shared toilet`. Different wordings are converted automatically, so "24/7 light", "24 hours electricity" and "constant power" are all saved and searched as `24hr electricity`.
+Listings not reconfirmed within `LISTING_EXPIRY_DAYS` (default 30) become `expired` and are hidden from search.
 
-**Expiry:** listings not reconfirmed within `LISTING_EXPIRY_DAYS` (default 30) become `expired` automatically (checked on startup and every hour).
-
-### Reviews
-| Method | Route | Who | Body |
-|---|---|---|---|
-| GET | /listings/:id/reviews | anyone | |
-| POST | /listings/:id/reviews | student | `rating (1-5), comment` — one per house |
-| PATCH | /listings/:id/reviews | student | edit my review |
-| DELETE | /listings/:id/reviews | student | delete my review |
-
-### Inspections
-| Method | Route | Who | Body / notes |
-|---|---|---|---|
-| POST | /inspections | student | `listing, date` (ISO date+time), `note` |
-| GET | /inspections/mine?upcoming=true | student | my inspections |
-| GET | /inspections/agent?status=pending | agent | requests for my houses |
-| PATCH | /inspections/:id/respond | agent | `action: confirm / propose / decline / complete`, `proposedDate` (for propose), `agentNote` |
-| PATCH | /inspections/:id/accept | student | accept agent's proposed time |
-| PATCH | /inspections/:id/cancel | student or agent | |
-
-### Bookmarks (favourites)
+### Reviews · Inspections · Bookmarks · Roommates · Reports
 | Method | Route | Who |
 |---|---|---|
-| GET | /bookmarks | student |
-| POST | /bookmarks/:listingId | student |
-| DELETE | /bookmarks/:listingId | student |
+| GET / POST / PATCH / DELETE | /listings/:id/reviews | anyone reads; students write (`rating 1-5, comment`) |
+| POST | /inspections | student: `listing, date, note` |
+| GET | /inspections/mine?upcoming=true | student |
+| GET | /inspections/agent?status= | agent |
+| PATCH | /inspections/:id/respond | agent: `action: confirm / propose / decline / complete`, `proposedDate`, `agentNote` |
+| PATCH | /inspections/:id/accept · /:id/cancel | student accepts proposal · either cancels |
+| GET · POST · DELETE | /bookmarks · /bookmarks/:listingId | student |
+| GET | /roommates?maxBudget=&area=&gender=&hasHouse= | student, sorted by `matchScore` |
+| GET · PUT · DELETE | /roommates/me | student (no profile = finding a house alone) |
+| POST | /reports | logged in: `listing? / agent?, reason, details` |
 
-### Find a roommate (optional — no profile = finding a house alone)
-| Method | Route | Who | Body / notes |
-|---|---|---|---|
-| GET | /roommates?maxBudget=&area=&gender=&hasHouse= | student | sorted by `matchScore` (area, budget, habits, department) |
-| GET | /roommates/me | student | my profile (null if not looking) |
-| PUT | /roommates/me | student | `budget, preferredAreas, gender, preferredGender, department, level, about, habits, contact, hasHouse, listing` |
-| DELETE | /roommates/me | student | stop looking for a roommate |
-
-### Reports
-| Method | Route | Who | Body |
-|---|---|---|---|
-| POST | /reports | logged in | `listing?` or `agent?`, `reason` (fake_listing, wrong_price, already_rented, scam, rude_agent, other), `details` |
-
-### Admin dashboard
+### Admin
 | Method | Route | Body / notes |
 |---|---|---|
-| GET | /admin/stats | counts for the dashboard |
+| GET | /admin/stats | dashboard counts |
+| POST | /admin/admins | `name, email, password`: add an admin (or promote that email) |
 | GET | /admin/users?role=&q= | |
+| PATCH | /admin/users/:id/role | `role: student / agent / admin` |
 | PATCH | /admin/users/:id/ban | `banned: true / false` |
-| GET | /admin/agents?status=pending | agents waiting for verification |
+| GET | /admin/agents?status=pending | |
 | PATCH | /admin/agents/:id/verify | `approve: true` or `approve: false, reason` |
-| GET | /admin/listings?status= | |
-| DELETE | /admin/listings/:id | |
-| GET | /admin/reports?status=open | |
-| PATCH | /admin/reports/:id | `status: resolved / dismissed, adminNote` |
-
-Errors always come back as `{ "message": "..." }` with a proper status code.
+| GET · DELETE | /admin/listings · /admin/listings/:id | |
+| GET · PATCH | /admin/reports · /admin/reports/:id | `status: resolved / dismissed, adminNote` |

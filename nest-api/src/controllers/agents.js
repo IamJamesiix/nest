@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import Listing from "../models/Listing.js";
-import { AppError, fileUrl } from "../utils/helpers.js";
+import { AppError } from "../utils/helpers.js";
+import { saveFile } from "../utils/storage.js";
 
 // POST /api/agents/verification  (multipart: idType, idNumber, cacNumber?, idDocument file)
 // how we confirm people are real agents: they send ID + document, admin checks and approves
@@ -14,6 +15,8 @@ export const submitVerification = async (req, res) => {
     throw new AppError("Upload a photo/scan of your ID as idDocument", 400);
   }
 
+  const uploadedUrl = req.file ? await saveFile(req, req.file, "verification") : null;
+
   req.user.agentInfo = {
     ...(info.toObject ? info.toObject() : info),
     idType,
@@ -21,7 +24,7 @@ export const submitVerification = async (req, res) => {
     cacNumber,
     businessName: businessName || info.businessName,
     officeAddress: officeAddress || info.officeAddress,
-    idDocumentUrl: req.file ? fileUrl(req, req.file) : req.body.idDocumentUrl || info.idDocumentUrl,
+    idDocumentUrl: uploadedUrl || req.body.idDocumentUrl || info.idDocumentUrl,
     verificationStatus: "pending",
     rejectionReason: undefined,
     submittedAt: new Date(),

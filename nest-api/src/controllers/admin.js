@@ -4,6 +4,7 @@ import Inspection from "../models/Inspection.js";
 import Report from "../models/Report.js";
 import Review from "../models/Review.js";
 import { AppError, escapeRegex } from "../utils/helpers.js";
+import { createOrPromoteAdmin } from "../utils/admin.js";
 
 // GET /api/admin/stats
 export const stats = async (req, res) => {
@@ -103,4 +104,31 @@ export const updateReport = async (req, res) => {
   const report = await Report.findByIdAndUpdate(req.params.id, { status, adminNote }, { new: true, runValidators: true });
   if (!report) throw new AppError("Report not found", 404);
   res.json({ report });
+};
+
+// POST /api/admin/admins  { name, email, password }  -> add another admin (or promote that email)
+export const addAdmin = async (req, res) => {
+  const { user, created } = await createOrPromoteAdmin(req.body || {});
+  res.status(created ? 201 : 200).json({ message: created ? "Admin created" : "Existing account promoted to admin", user });
+};
+
+// PATCH /api/admin/users/:id/role  { role: "student" | "agent" | "admin" }
+export const changeRole = async (req, res) => {
+  const { role } = req.body || {};
+  if (!["student", "agent", "admin"].includes(role)) throw new AppError("role must be student, agent or admin", 400);
+
+  const user = await User.findById(req.params.id);
+  if (!user) throw new AppError("User not found", 404);
+  if (String(user._id) === String(req.user._id) && role !== "admin") throw new AppError("You can't remove your own admin role", 400);
+
+  if (user.role === "admin" && role !== "admin") {
+    const admins = await User.countDocuments({ role: "admin" });
+    if (admins <= 1) throw new AppError("There must be at least one admin", 400);
+  }
+
+  user.role = role;
+  if (role === "agent" && !user.agentInfo) user.agentInfo = { verificationStatus: "not_submitted" };
+  if (role !== "agent") user.agentInfo = undefined;
+  await user.save();
+  res.json({ message: `Role changed to ${role}`, user });
 };

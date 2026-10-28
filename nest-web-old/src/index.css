@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #f8f7f4;
+  --color-sf: #ffffff;
+  --color-sf2: #efede7;
+  --color-ink: #10201f;
+  --color-mut: #56625f;
+  --color-teal: #0f4c5c;
+  --color-teal2: #15657a;
+  --color-night: #0b1a1d;
+  --color-gold: #e3b23c;
+  --color-goldt: #7a5a0e;
+  --color-line: rgba(15, 76, 92, 0.13);
+  --color-okb: #e3f4ea;
+  --color-okt: #1e6e41;
+  --color-pdb: #fdf1dc;
+  --color-pdt: #8a5408;
+  --color-rnb: #e9e9e7;
+  --color-rnt: #555b5a;
+  --color-bad: #b3261e;
+  --color-badb: #fbe9e7;
+  --color-badline: #f1c7c2;
+  --color-pdline: #f0d9a8;
+  --color-tealb: #e1eef2;
+  --color-tealt: #0f4c5c;
+  --color-onteal: #f8f7f4;
+  --color-glass: rgba(255, 255, 255, 0.78);
+  --color-glassline: rgba(255, 255, 255, 0.9);
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --shadow-soft: 0 24px 50px -24px rgba(15, 76, 92, 0.38);
+}
+
+/* map + drawn house colours (light) */
+:root {
+  --map: #e4eae6;
+  --road: #ffffff;
+  --blk: #d6dfda;
+  --park: #c9ddcf;
+  --maptext: #0f4c5c;
+  --ring: rgba(15, 76, 92, 0.18);
+  --sweep: #15657a;
+  --art-sky: #c9dde0;
+  --art-ground: #5e8e96;
+  --art-tree: #dce9e2;
+}
+
+/* dark theme, from the Nest design file */
+html.dark {
+  color-scheme: dark;
+  --color-bg: #0a1315;
+  --color-sf: #101d20;
+  --color-sf2: #16272b;
+  --color-ink: #ecf1ef;
+  --color-mut: #9aada9;
+  --color-teal: #12586a;
+  --color-teal2: #1b7489;
+  --color-tealt: #7fc4d4;
+  --color-onteal: #ecf1ef;
+  --color-night: #060e10;
+  --color-gold: #e8bc4e;
+  --color-goldt: #e8bc4e;
+  --color-line: rgba(255, 255, 255, 0.09);
+  --color-okb: rgba(46, 160, 96, 0.16);
+  --color-okt: #72d49d;
+  --color-pdb: rgba(232, 188, 78, 0.15);
+  --color-pdt: #e8bc4e;
+  --color-pdline: rgba(232, 188, 78, 0.3);
+  --color-rnb: rgba(255, 255, 255, 0.08);
+  --color-rnt: #a9b4b2;
+  --color-bad: #f2a39b;
+  --color-badb: rgba(220, 80, 70, 0.16);
+  --color-badline: rgba(242, 163, 155, 0.3);
+  --color-tealb: rgba(27, 116, 137, 0.25);
+  --color-glass: rgba(16, 32, 36, 0.72);
+  --color-glassline: rgba(255, 255, 255, 0.1);
+  --shadow-soft: 0 24px 60px -24px rgba(0, 0, 0, 0.75);
+  --map: #0e1b1e;
+  --road: #1c3136;
+  --blk: #122428;
+  --park: #11302a;
+  --maptext: #7fc4d4;
+  --ring: rgba(127, 196, 212, 0.16);
+  --sweep: #7fc4d4;
+  --art-sky: #16323a;
+  --art-ground: #0f2a30;
+  --art-tree: #1d3b40;
+}
+
+html { background: var(--color-bg); color: var(--color-ink); transition: background-color 0.3s, color 0.3s; }
+body { margin: 0; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.55; }
+
+:focus-visible { outline: 2px solid var(--color-teal2); outline-offset: 2px; }
+
+@layer components {
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 h-11 text-sm font-semibold transition-colors; }
+  .btn-sm { @apply h-9 px-4 text-[13px]; }
+  .btn-gold { @apply bg-gold text-[#1a1405] hover:bg-[#d9a52b]; }
+  .btn-teal { @apply bg-teal text-onteal hover:bg-teal2; }
+  .btn-ghost { @apply border border-line bg-sf text-ink hover:bg-sf2; }
+  .btn-danger { @apply border border-badline bg-badb text-bad hover:brightness-95; }
+
+  .input { @apply w-full rounded-2xl border border-line bg-sf px-4 h-11 text-[15px] text-ink outline-none placeholder:text-mut/60 focus:border-teal2; }
+  textarea.input { @apply h-auto py-3; }
+  .label { @apply mb-1.5 block text-[13px] font-semibold text-mut; }
+
+  .panel { @apply rounded-3xl border border-line bg-sf; }
+  .h-serif { @apply font-serif font-medium tracking-[-0.01em]; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* live campus map */
+  .map-sweep { transform-box: view-box; animation: map-spin linear infinite; }
+  @keyframes map-spin { to { transform: rotate(360deg); } }
+  .map-ping { animation: map-ping ease-out infinite; }
+  @keyframes map-ping { 0% { transform: scale(0.8); opacity: 0.8; } 14% { transform: scale(2.3); opacity: 0; } 100% { transform: scale(2.3); opacity: 0; } }
+  .map-route { animation: map-route 1.4s linear infinite; }
+  @keyframes map-route { to { stroke-dashoffset: -18; } }
+  .map-pin { animation: map-pin 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.3) both; }
+  @keyframes map-pin { from { opacity: 0; transform: translateY(-40%) scale(0.6); } to { opacity: 1; transform: none; } }
+
+  .dropdown { animation: drop 0.16s ease-out both; }
+  @keyframes drop { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .rise { animation: rise 0.7s ease both; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+}

@@ -14,7 +14,6 @@ You need Node 18 or newer (`node -v`).
 
 # 2. start the backend (terminal 1)
 cd Nest/nest-api
-npm run seed        # fresh demo data
 npm run dev         # http://localhost:5000
 
 # 3. start the frontend (terminal 2)
@@ -53,16 +52,24 @@ Then add `tailwindcss()` to the plugins in `vite.config.js` and `@import "tailwi
 The sun/moon button in the navbar (and at the top of the dashboard sidebar) switches themes.
 Nest follows the device's light/dark setting until someone picks one, then remembers it.
 
-## Demo accounts
+## First-time setup (no demo data)
 
-Password for all: `password123`. The login page has buttons that fill these in.
+The backend has no seed data or demo accounts. Create the first admin from the backend folder:
 
-| Role | Email |
-|---|---|
-| Admin | admin@nest.com |
-| Verified agent | agent@nest.com, agent2@nest.com |
-| Agent waiting for verification | pending@nest.com |
-| Student | student@nest.com, amaka@nest.com, daniel@nest.com |
+```bash
+cd nest-api
+npm run create-admin -- --name "Your Name" --email you@example.com --password yourpassword
+```
+
+Then sign in with that email on the normal login page. More admins can be added from **Admin → Admins & roles**.
+
+Agents and students sign up themselves on the Register page (email/password or Google).
+
+## Maps and location
+
+- Maps use Leaflet with OpenStreetMap tiles, so no API key is needed.
+- Students' location comes from the browser's GPS. It works on `localhost` and on `https` (Vercel), and it's kept in memory only, never saved.
+- Agents pin each house on a map (or use "I'm at the house"). The area name is filled from OpenStreetMap and can be edited.
 
 ## Folder guide
 
@@ -81,46 +88,38 @@ src/
 
 ## Demo script (about 8 minutes)
 
-Run `npm run seed` right before presenting so the data is clean.
+Do this once before presenting so there's real data to show:
 
-### 1. The problem (30 seconds)
-"Finding a house around OAU means walking around with agents, hidden fees showing up at the last minute, and houses that were rented weeks ago still being advertised. Nest fixes that."
+1. Create an admin with `npm run create-admin` (above).
+2. Register an agent. Send an ID on the Verification page, then approve it as the admin.
+3. As the agent, create 3 or 4 listings. For each one:
+   - use "I'm at the house" or drop the pin
+   - answer the 24hrs electricity question
+   - add at least one photo
+   - add a short video tour on one of them
+4. Register a student account.
 
-### 2. Student flow (3 minutes)
-1. Open the **home page**. Point out the campus map with price pins, and the search bar.
-2. Search **Max total budget ₦250,000**. On Browse, show the filters: tick **Lagere** and **Mayfair**, then sort by **Closest to campus**. Clear filters.
-3. Tick **Add to compare** on three houses, click **Compare** in the bar at the bottom. Show the cheapest, closest and best rated tags.
-4. Open a house. Show the photos, the **Confirmed X days ago** label, and the **Verified agent** badge.
-5. In the **cost breakdown**, change **Split with** to 2 people. "Every fee is shown before you go, and you can see your share."
-6. Sign in as **student@nest.com** (use the Student button on the login page).
-7. Back on the house: **Save** it, then pick a day and time and click **Request**. You land on **My inspections**.
-8. Open **Roommates**. Show the match scores, then **Edit profile** to show budget, areas and habits.
-9. Mention **Report**: any user can flag a scam or wrong price.
+During the presentation:
 
-### 3. Agent flow (2.5 minutes)
-1. Log out, sign in as **agent@nest.com**.
-2. Dashboard: show the **reconfirm warning** for the old listing. Click **Still accurate, reconfirm**. "Listings expire after 30 days unless the agent confirms they're still available."
-3. Change a listing's status with the dropdown (Available, Pending, Rented).
-4. **Inspection requests**: click **Propose new time** on the new request from the student, and send it.
-5. **Create listing**: fill title, area, rent and fees. Point at the live **What students will see** total. Add a photo and publish.
-6. Log out, sign in as **pending@nest.com**. Show that an unverified agent sees the verification banner and can't create listings.
-
-### 4. Back to the student (30 seconds)
-Sign in as **student@nest.com**, open **My inspections**, and click **Accept new time**.
-
-### 5. Admin flow (1.5 minutes)
-1. Sign in as **admin@nest.com**. Show the stats cards.
-2. **Agent verification**: click **View ID** on Kola Bello, then **Approve**. "Now his houses show the Verified badge."
-3. **Reports**: open the wrong price report, **Resolve** it with a note.
-4. **Users**: search a name, show **Ban** and **Unban**.
-5. **All listings**: show that admins can remove any listing.
-
-### 6. Close (30 seconds)
-"Verified agents, the full cost upfront, listings that stay current, and inspections booked in the app. That's Nest."
+1. **Student.**
+   - Open Browse and click **Use my location**. Point out "Located within X m" and the "km from you" on each card.
+   - Change the distance radius, tap an area chip, then tap **24hrs Electricity**.
+   - Set a budget range and show the "Showing N houses from ₦… to ₦…" line.
+   - Switch to **Map** view.
+   - Open a house: play the video tour, split the cost, then book an inspection.
+2. **Agent.**
+   - Create a listing live. Show the GPS pin, the area filled from the map, and the required electricity question.
+   - Upload a video and point out the progress bar.
+   - Answer the student's inspection request.
+3. **Admin.**
+   - Show the stats.
+   - Approve an agent.
+   - Open **Admins & roles** and add an admin.
+   - Change a user's role.
 
 ## If something goes wrong during the demo
 
 - **"Can't reach the server"**: the backend isn't running. Start `npm run dev` in `nest-api`.
-- **Photos don't show**: seed photos come from picsum.photos and need internet. Without it, Nest shows a drawn house instead, so the demo still works.
+- **Map tiles don't show**: they come from OpenStreetMap and need internet. Pins and distances still work.
+- **"Use my location" does nothing**: the browser blocked location. Allow it in the address bar, or use **Drop a pin**.
 - **Stuck logged in as the wrong user**: click Log out, or clear the site data in the browser.
-- **Data got messy after practising**: run `npm run seed` in `nest-api` again.

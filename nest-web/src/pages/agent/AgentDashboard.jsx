@@ -5,6 +5,7 @@ import { EmptyState, ErrorNote, Icon, PageTitle, Photo, Spinner, StatusBadge } f
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { daysAgo, naira, roomLabel } from "../../utils/format";
+import Select from "../../components/Select";
 
 // shows where the agent is with verification
 export function VerificationBanner({ info }) {
@@ -207,11 +208,18 @@ export default function AgentDashboard() {
                     {l.status === "expired" ? (
                       <StatusBadge status="expired" />
                     ) : (
-                      <select value={l.status} onChange={(e) => changeStatus(l._id, e.target.value)} className="input h-9 w-auto py-0 text-sm font-semibold" aria-label="Change status">
-                        <option value="available">Available</option>
-                        <option value="pending">Pending</option>
-                        <option value="rented">Rented</option>
-                      </select>
+                      <Select
+                        variant="pill"
+                        label="Change status"
+                        className="w-[140px]"
+                        value={l.status}
+                        onChange={(v) => v !== l.status && changeStatus(l._id, v)}
+                        options={[
+                          { value: "available", label: "Available" },
+                          { value: "pending", label: "Pending" },
+                          { value: "rented", label: "Rented" },
+                        ]}
+                      />
                     )}
                   </td>
                   <td className="p-4">

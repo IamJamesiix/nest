@@ -5,6 +5,7 @@ import { ErrorNote, Icon, PageTitle, StatusBadge } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { fmtDate, ID_TYPES } from "../../utils/format";
+import Select from "../../components/Select";
 
 const STEPS = ["Send your ID", "Admin reviews it", "Start listing houses"];
 
@@ -92,13 +93,12 @@ export default function Verification() {
               <label className="label" htmlFor="idType">
                 ID type
               </label>
-              <select id="idType" className="input" value={form.idType} onChange={set("idType")}>
-                {Object.entries(ID_TYPES).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
+              <Select
+                id="idType"
+                value={form.idType}
+                onChange={(v) => setForm({ ...form, idType: v })}
+                options={Object.entries(ID_TYPES).map(([value, label]) => ({ value, label }))}
+              />
             </div>
             <div>
               <label className="label" htmlFor="idNumber">

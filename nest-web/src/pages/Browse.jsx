@@ -5,6 +5,7 @@ import ListingCard from "../components/ListingCard";
 import { EmptyState, ErrorNote, Icon, Spinner } from "../components/ui";
 import { AREAS, cap, ELECTRICITY, ROOM_TYPES } from "../utils/format";
 import useAmenities from "../utils/useAmenities";
+import Select from "../components/Select";
 
 const SORTS = {
   newest: "Newest",
@@ -249,16 +250,17 @@ export default function Browse() {
             <button onClick={() => setShowFilters(!showFilters)} className="btn btn-ghost lg:hidden">
               <Icon name="filter" /> Filters {activeCount > 0 && `(${activeCount})`}
             </button>
-            <label className="ml-auto flex items-center gap-2 text-sm font-semibold text-mut">
+            <div className="ml-auto flex items-center gap-2 text-sm font-semibold text-mut">
               <span className="hidden sm:inline">Sort by</span>
-              <select className="input h-10 w-auto py-0" value={params.get("sort") || "newest"} onChange={(e) => set("sort", e.target.value === "newest" ? "" : e.target.value)}>
-                {Object.entries(SORTS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <Select
+                variant="pill"
+                label="Sort by"
+                className="w-[200px]"
+                value={params.get("sort") || "newest"}
+                onChange={(v) => set("sort", v === "newest" ? "" : v)}
+                options={Object.entries(SORTS).map(([value, label]) => ({ value, label }))}
+              />
+            </div>
           </div>
 
           <ErrorNote>{error}</ErrorNote>

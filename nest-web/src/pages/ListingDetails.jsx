@@ -9,6 +9,7 @@ import { useCompare } from "../context/CompareContext";
 import { useToast } from "../context/ToastContext";
 import { confirmedText, ELECTRICITY, fmtDate, has24Light, naira, RENT_PERIODS, roomLabel, walkText } from "../utils/format";
 import useAmenities, { labelFrom } from "../utils/useAmenities";
+import Select from "../components/Select";
 
 const TIMES = ["9:00", "11:00", "13:00", "15:00", "16:30"];
 const timeLabel = (t) => {
@@ -30,19 +31,16 @@ function CostCard({ listingId, initial }) {
     <div className="rounded-[28px] bg-teal p-6 text-onteal">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-bold text-gold">Cost breakdown</h2>
-        <label className="flex items-center gap-2 text-xs font-semibold text-onteal/75">
+        <div className="flex items-center gap-2 text-xs font-semibold text-onteal/75">
           Split with
-          <select value={split} onChange={(e) => setSplit(Number(e.target.value))} className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-onteal outline-none">
-            <option value={1} className="text-ink">
-              Just me
-            </option>
-            {[2, 3, 4].map((n) => (
-              <option key={n} value={n} className="text-ink">
-                {n} people
-              </option>
-            ))}
-          </select>
-        </label>
+          <Select
+            variant="onDark"
+            label="Split with"
+            value={split}
+            onChange={(v) => setSplit(Number(v))}
+            options={[{ value: 1, label: "Just me" }, ...[2, 3, 4].map((n) => ({ value: n, label: `${n} people` }))]}
+          />
+        </div>
       </div>
 
       <table className="mt-5 w-full text-sm">

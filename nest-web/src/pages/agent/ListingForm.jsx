@@ -7,6 +7,7 @@ import { useToast } from "../../context/ToastContext";
 import { AREAS, ELECTRICITY, naira, RENT_PERIODS, ROOM_TYPES } from "../../utils/format";
 import useAmenities, { labelFrom } from "../../utils/useAmenities";
 import { VerificationBanner } from "./AgentDashboard";
+import Select from "../../components/Select";
 
 const BLANK = {
   title: "",
@@ -199,13 +200,12 @@ export default function ListingForm() {
                 <input id="dist" type="number" step="0.1" min="0" className="input" value={form.distanceFromCampusKm} onChange={set("distanceFromCampusKm")} />
               </Field>
               <Field label="Room type" id="roomType">
-                <select id="roomType" className="input" value={form.roomType} onChange={set("roomType")}>
-                  {Object.entries(ROOM_TYPES).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  id="roomType"
+                  value={form.roomType}
+                  onChange={(v) => setForm({ ...form, roomType: v })}
+                  options={Object.entries(ROOM_TYPES).map(([value, label]) => ({ value, label }))}
+                />
               </Field>
               <Field label="Bedrooms" id="bed">
                 <input id="bed" type="number" min="1" className="input" value={form.bedrooms} onChange={set("bedrooms")} />
@@ -266,13 +266,12 @@ export default function ListingForm() {
                 <input id="rent" required inputMode="numeric" className="input" value={form.rent} onChange={setMoney("rent")} />
               </Field>
               <Field label="Rent period" id="period">
-                <select id="period" className="input" value={form.rentPeriod} onChange={set("rentPeriod")}>
-                  {Object.entries(RENT_PERIODS).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  id="period"
+                  value={form.rentPeriod}
+                  onChange={(v) => setForm({ ...form, rentPeriod: v })}
+                  options={Object.entries(RENT_PERIODS).map(([value, label]) => ({ value, label }))}
+                />
               </Field>
               <Field label="Agency fee (₦)" id="agency">
                 <input id="agency" inputMode="numeric" className="input" value={form.agencyFee} onChange={setMoney("agencyFee")} />

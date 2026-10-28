@@ -4,6 +4,7 @@ import api, { errMsg } from "../../api/client";
 import { Avatar, EmptyState, ErrorNote, Icon, Modal, PageTitle, Spinner } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
 import { AREAS, cap, naira } from "../../utils/format";
+import Select from "../../components/Select";
 
 const EMPTY = {
   budget: "",
@@ -112,20 +113,30 @@ function ProfileForm({ profile, onSaved, onClose }) {
           <label className="label" htmlFor="gender">
             I am
           </label>
-          <select id="gender" className="input" value={form.gender} onChange={set("gender")}>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
+          <Select
+            id="gender"
+            value={form.gender}
+            onChange={(v) => setForm({ ...form, gender: v })}
+            options={[
+              { value: "male", label: "Male" },
+              { value: "female", label: "Female" },
+            ]}
+          />
         </div>
         <div>
           <label className="label" htmlFor="pgender">
             I'd room with
           </label>
-          <select id="pgender" className="input" value={form.preferredGender} onChange={set("preferredGender")}>
-            <option value="any">Anyone</option>
-            <option value="male">Male only</option>
-            <option value="female">Female only</option>
-          </select>
+          <Select
+            id="pgender"
+            value={form.preferredGender}
+            onChange={(v) => setForm({ ...form, preferredGender: v })}
+            options={[
+              { value: "any", label: "Anyone" },
+              { value: "male", label: "Male only" },
+              { value: "female", label: "Female only" },
+            ]}
+          />
         </div>
         <div>
           <label className="label" htmlFor="dept">
@@ -251,7 +262,6 @@ export default function Roommates() {
     toast("You're no longer listed as looking for a roommate");
   };
 
-  const setF = (key) => (e) => setFilters({ ...filters, [key]: e.target.value });
 
   if (error) return <ErrorNote>{error}</ErrorNote>;
   if (profile === undefined) return <Spinner label="Loading roommates" />;
@@ -299,24 +309,32 @@ export default function Roommates() {
       {/* filters */}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <input className="input" inputMode="numeric" placeholder="Max budget ₦" value={filters.maxBudget} onChange={(e) => setFilters({ ...filters, maxBudget: e.target.value.replace(/\D/g, "") })} />
-        <select className="input" value={filters.area} onChange={setF("area")}>
-          <option value="">Any area</option>
-          {AREAS.map((a) => (
-            <option key={a} value={a.toLowerCase()}>
-              {a}
-            </option>
-          ))}
-        </select>
-        <select className="input" value={filters.gender} onChange={setF("gender")}>
-          <option value="">Any gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        <select className="input" value={filters.hasHouse} onChange={setF("hasHouse")}>
-          <option value="">With or without a house</option>
-          <option value="true">Already has a house</option>
-          <option value="false">Still looking for a house</option>
-        </select>
+        <Select
+          label="Area"
+          value={filters.area}
+          onChange={(v) => setFilters({ ...filters, area: v })}
+          options={[{ value: "", label: "Any area" }, ...AREAS.map((a) => ({ value: a.toLowerCase(), label: a }))]}
+        />
+        <Select
+          label="Gender"
+          value={filters.gender}
+          onChange={(v) => setFilters({ ...filters, gender: v })}
+          options={[
+            { value: "", label: "Any gender" },
+            { value: "male", label: "Male" },
+            { value: "female", label: "Female" },
+          ]}
+        />
+        <Select
+          label="House"
+          value={filters.hasHouse}
+          onChange={(v) => setFilters({ ...filters, hasHouse: v })}
+          options={[
+            { value: "", label: "With or without a house" },
+            { value: "true", label: "Already has a house" },
+            { value: "false", label: "Still looking for a house" },
+          ]}
+        />
       </div>
 
       {!matches ? (

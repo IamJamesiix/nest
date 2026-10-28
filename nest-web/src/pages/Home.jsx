@@ -5,6 +5,7 @@ import CampusMap from "../components/CampusMap";
 import ListingCard from "../components/ListingCard";
 import { EmptyState, Icon, Spinner } from "../components/ui";
 import { AREAS, naira, roomLabel } from "../utils/format";
+import Select from "../components/Select";
 
 const FEATURES = [
   { icon: "shield", title: "Verified agents", text: "Every agent sends an ID and gets checked before they can post a house." },
@@ -24,7 +25,7 @@ export default function Home() {
 
   useEffect(() => {
     api
-      .get("/listings", { params: { limit: 6, sort: "newest" } })
+      .get("/listings", { params: { limit: 12, sort: "newest" } })
       .then((res) => setListings(res.data.listings))
       .catch(() => setListings([]))
       .finally(() => setLoading(false));
@@ -84,15 +85,16 @@ export default function Home() {
           )}
 
           <form onSubmit={search} className="mt-4 flex flex-wrap gap-1.5 rounded-[28px] border border-glassline bg-glass p-2.5 shadow-soft backdrop-blur-xl">
-            <label className="flex min-w-[150px] flex-[1.25] flex-col gap-1 rounded-2xl px-4 py-2 text-xs font-semibold text-mut">
-              Area
-              <select value={area} onChange={(e) => setArea(e.target.value)} className="bg-transparent text-[15px] font-semibold text-ink outline-none">
-                <option value="">Any area near OAU</option>
-                {AREAS.map((a) => (
-                  <option key={a}>{a}</option>
-                ))}
-              </select>
-            </label>
+            <div className="flex min-w-[150px] flex-[1.25] flex-col gap-1 rounded-2xl px-4 py-2 text-xs font-semibold text-mut">
+              <span>Area</span>
+              <Select
+                variant="bare"
+                label="Area"
+                value={area}
+                onChange={setArea}
+                options={[{ value: "", label: "Any area" }, ...AREAS]}
+              />
+            </div>
             <label className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl border-line px-4 py-2 text-xs font-semibold text-mut sm:border-l">
               {withMate ? "Max total (whole house)" : "Max total budget"}
               <input
@@ -103,17 +105,19 @@ export default function Home() {
                 className="bg-transparent text-[15px] font-semibold text-ink outline-none placeholder:text-mut/50"
               />
             </label>
-            <label className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl border-line px-4 py-2 text-xs font-semibold text-mut sm:border-l">
-              Room type
-              <select value={roomType} onChange={(e) => setRoomType(e.target.value)} className="bg-transparent text-[15px] font-semibold text-ink outline-none">
-                <option value="">Any type</option>
-                {["self_contained", "single_room", "room_and_parlour", "mini_flat", "shared_apartment", "hostel"].map((t) => (
-                  <option key={t} value={t}>
-                    {roomLabel(t)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl border-line px-4 py-2 text-xs font-semibold text-mut sm:border-l">
+              <span>Room type</span>
+              <Select
+                variant="bare"
+                label="Room type"
+                value={roomType}
+                onChange={setRoomType}
+                options={[
+                  { value: "", label: "Any type" },
+                  ...["self_contained", "single_room", "room_and_parlour", "mini_flat", "shared_apartment", "hostel"].map((t) => ({ value: t, label: roomLabel(t) })),
+                ]}
+              />
+            </div>
             <button className="btn btn-gold h-14 w-full rounded-2xl px-6 sm:w-auto">
               <Icon name="search" /> Search
             </button>
@@ -141,7 +145,7 @@ export default function Home() {
 
         <div className="relative">
           <CampusMap listings={listings} className="aspect-[6/5] shadow-soft" />
-          <div className="absolute left-5 top-5 flex items-center gap-3 rounded-2xl border border-glassline bg-glass px-4 py-3 backdrop-blur">
+          <div className="absolute left-5 top-5 hidden items-center gap-3 rounded-2xl sm:flex border border-glassline bg-glass px-4 py-3 backdrop-blur">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal text-gold">
               <Icon name="pin" />
             </span>
@@ -184,7 +188,7 @@ export default function Home() {
             <Spinner label="Finding houses" />
           ) : listings.length ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {listings.map((l) => (
+              {listings.slice(0, 6).map((l) => (
                 <ListingCard key={l._id} listing={l} />
               ))}
             </div>

@@ -4,7 +4,7 @@ import api, { errMsg } from "../../api/client";
 import { EmptyState, ErrorNote, Icon, PageTitle, Photo, Spinner, StatusBadge } from "../../components/ui";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
-import { daysAgo, naira, roomLabel } from "../../utils/format";
+import { daysAgo, naira, roomLabel, placeOf } from "../../utils/format";
 import Select from "../../components/Select";
 
 // shows where the agent is with verification
@@ -193,7 +193,7 @@ export default function AgentDashboard() {
                           {l.title}
                         </Link>
                         <p className="text-xs text-mut">
-                          {roomLabel(l.roomType)} · {l.area}
+                          {roomLabel(l.roomType)} · {placeOf(l)}
                         </p>
                       </div>
                     </div>

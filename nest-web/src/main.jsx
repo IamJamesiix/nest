@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { CompareProvider } from "./context/CompareContext";
 import { ToastProvider } from "./context/ToastContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { LocationProvider } from "./context/LocationContext";
 import ScrollToTop from "./components/ScrollToTop";
 import "./index.css";
 
@@ -16,13 +17,15 @@ const app = (
   <BrowserRouter>
     <ScrollToTop />
     <ThemeProvider>
-    <ToastProvider>
-      <AuthProvider>
-        <CompareProvider>
-          <App />
-        </CompareProvider>
-      </AuthProvider>
-    </ToastProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <CompareProvider>
+            <LocationProvider>
+              <App />
+            </LocationProvider>
+          </CompareProvider>
+        </AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   </BrowserRouter>
 );

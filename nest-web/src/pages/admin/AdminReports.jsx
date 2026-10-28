@@ -98,7 +98,7 @@ export default function AdminReports() {
                     <Link to={`/listings/${r.listing._id}`} className="font-bold text-tealt hover:underline">
                       {r.listing.title}
                     </Link>{" "}
-                    <span className="text-mut">({r.listing.area})</span>
+                    <span className="text-mut">({r.listing.area || r.listing.landmark || "Near OAU"})</span>
                   </p>
                 )}
                 {r.agent && (

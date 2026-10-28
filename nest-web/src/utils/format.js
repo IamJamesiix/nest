@@ -21,8 +21,6 @@ export const ROOM_TYPES = {
 export const RENT_PERIODS = { yearly: "Yearly", semester: "Per semester", monthly: "Monthly" };
 export const PERIOD_SHORT = { yearly: "a year", semester: "a semester", monthly: "a month" };
 
-export const AREAS = ["Mayfair", "Lagere", "Asherifa", "Modomo", "Damico", "Parakin", "Fajuyi"];
-
 // standard amenity keys from the backend. GET /listings/amenities is the source of truth;
 // this list is only used if that request fails
 export const ELECTRICITY = "24hr electricity";
@@ -46,7 +44,32 @@ export const AMENITIES = [
 const AMENITY_LABELS = { [ELECTRICITY]: "24hrs electricity", "pop ceiling": "POP ceiling" };
 export const amenityLabel = (key = "") => AMENITY_LABELS[key] || key.charAt(0).toUpperCase() + key.slice(1);
 
-export const has24Light = (listing) => !!listing?.amenities?.includes(ELECTRICITY);
+// the backend sends electricity24; older listings may only have the amenity
+export const has24Light = (listing) => listing?.electricity24 === true || (listing?.electricity24 == null && !!listing?.amenities?.includes(ELECTRICITY));
+export const hasVideo = (listing) => (listing?.videos?.length || 0) > 0;
+
+// area can be empty, so fall back to the landmark
+export const placeOf = (listing) => listing?.area || listing?.landmark || "Near OAU";
+
+// OAU main campus, used when we don't have the user's location
+export const CAMPUS = { lat: 7.5186, lng: 4.5225 };
+
+// straight-line distance in km between two { lat, lng } points
+export const kmBetween = (a, b) => {
+  const rad = (d) => (d * Math.PI) / 180;
+  const dLat = rad(b.lat - a.lat);
+  const dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 6371 * 2 * Math.asin(Math.sqrt(h));
+};
+
+export const fmtKm = (km) => (km == null ? "" : km < 1 ? `${Math.round(km * 1000)} m` : `${Number(km).toFixed(1)} km`);
+
+// upload limits, same as the backend
+export const MEDIA = {
+  photo: { types: ["image/jpeg", "image/png", "image/webp"], maxMb: 5, max: 15, label: "JPG, PNG or WEBP" },
+  video: { types: ["video/mp4", "video/quicktime", "video/webm", "video/3gpp"], maxMb: 50, max: 5, label: "MP4, MOV, WEBM or 3GP" },
+};
 
 export const ID_TYPES = {
   nin: "National ID (NIN)",

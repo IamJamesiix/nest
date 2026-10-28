@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api, { errMsg } from "../../api/client";
 import { EmptyState, ErrorNote, PageTitle, Photo, Spinner, StatusBadge } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
-import { confirmedText, naira, roomLabel } from "../../utils/format";
+import { confirmedText, naira, roomLabel, placeOf } from "../../utils/format";
 
 const TABS = [
   ["", "All"],
@@ -80,7 +80,7 @@ export default function AdminListings() {
                           {l.title}
                         </Link>
                         <p className="text-xs text-mut">
-                          {roomLabel(l.roomType)} · {l.area} · {confirmedText(l.lastConfirmedAt)}
+                          {roomLabel(l.roomType)} · {placeOf(l)} · {confirmedText(l.lastConfirmedAt)}
                         </p>
                       </div>
                     </div>

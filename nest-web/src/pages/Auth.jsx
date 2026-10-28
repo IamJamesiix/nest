@@ -4,13 +4,8 @@ import { errMsg } from "../api/client";
 import GoogleButton, { OrDivider } from "../components/GoogleButton";
 import { ErrorNote, LogoMark } from "../components/ui";
 import { homeFor, useAuth } from "../context/AuthContext";
+import PasswordInput from "../components/PasswordInput";
 
-const DEMO = [
-  ["Student", "student@nest.com"],
-  ["Agent", "agent@nest.com"],
-  ["Pending agent", "pending@nest.com"],
-  ["Admin", "admin@nest.com"],
-];
 
 function RoleToggle({ role, setRole }) {
   return (
@@ -97,32 +92,13 @@ export function Login() {
           <label className="label" htmlFor="password">
             Password
           </label>
-          <input id="password" type="password" required className="input" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          <PasswordInput id="password" required value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
         </div>
         <ErrorNote>{error}</ErrorNote>
         <button className="btn btn-teal h-12 w-full" disabled={busy}>
           {busy ? "Signing in..." : "Sign in"}
         </button>
       </form>
-
-      <div className="mt-6 rounded-2xl bg-sf2 p-4">
-        <p className="text-xs font-semibold text-mut">Demo accounts (password: password123)</p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          {DEMO.map(([label, mail]) => (
-            <button
-              key={mail}
-              type="button"
-              onClick={() => {
-                setEmail(mail);
-                setPassword("password123");
-              }}
-              className="rounded-full border border-line bg-sf px-3 py-1.5 text-[13px] font-semibold hover:bg-bg"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <p className="mt-6 text-center text-sm text-mut">
         New to Nest?{" "}
@@ -203,7 +179,7 @@ export function Register() {
           <label className="label" htmlFor="rpass">
             Password
           </label>
-          <input id="rpass" type="password" required minLength={6} className="input" value={form.password} onChange={set("password")} autoComplete="new-password" />
+          <PasswordInput id="rpass" required minLength={6} value={form.password} onChange={set("password")} autoComplete="new-password" />
         </div>
         {role === "agent" && <p className="text-sm text-mut">After signing up, you'll send an ID for verification. You can post houses once an admin approves you.</p>}
         <ErrorNote>{error}</ErrorNote>

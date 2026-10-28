@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import api, { errMsg } from "../../api/client";
 import { EmptyState, ErrorNote, Icon, PageTitle, Spinner } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
+import { useAuth } from "../../context/AuthContext";
+import Select from "../../components/Select";
 import { fmtDate } from "../../utils/format";
 
 const ROLES = [
@@ -13,6 +15,7 @@ const ROLES = [
 
 export default function AdminUsers() {
   const toast = useToast();
+  const { user: me } = useAuth();
   const [role, setRole] = useState("");
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
@@ -41,6 +44,18 @@ export default function AdminUsers() {
       load();
     } catch (err) {
       toast(errMsg(err), "error");
+    }
+  };
+
+  const changeRole = async (u, role) => {
+    if (role === u.role) return;
+    if (!window.confirm(`Make ${u.name} ${role === "admin" ? "an admin" : role === "agent" ? "an agent" : "a house finder"}?`)) return;
+    try {
+      await api.patch(`/admin/users/${u._id}/role`, { role });
+      toast(`${u.name}'s role changed`);
+      load();
+    } catch (err) {
+      toast(errMsg(err), "error"); // "You can't remove your own admin role", "There must be at least one admin"
     }
   };
 
@@ -92,8 +107,22 @@ export default function AdminUsers() {
                   <td className="p-4 font-bold">{u.name}</td>
                   <td className="p-4 text-mut">{u.email}</td>
                   <td className="p-4">
-                    {u.role === "student" ? "House finder" : u.role === "agent" ? "Agent" : "Admin"}
-                    {u.role === "agent" && u.agentInfo?.verificationStatus === "approved" && <span className="ml-1.5 text-xs font-semibold text-okt">verified</span>}
+                    <div className="flex items-center gap-2">
+                      <Select
+                        variant="pill"
+                        label={`Role for ${u.name}`}
+                        className="w-[150px]"
+                        value={u.role}
+                        onChange={(v) => changeRole(u, v)}
+                        options={[
+                          { value: "student", label: "House finder" },
+                          { value: "agent", label: "Agent" },
+                          { value: "admin", label: "Admin" },
+                        ]}
+                      />
+                      {u.role === "agent" && u.agentInfo?.verificationStatus === "approved" && <span className="text-xs font-semibold text-okt">verified</span>}
+                      {u._id === me._id && <span className="text-xs text-mut">you</span>}
+                    </div>
                   </td>
                   <td className="p-4 text-mut">{fmtDate(u.createdAt)}</td>
                   <td className="p-4">{u.isBanned ? <span className="rounded-full bg-badb px-2.5 py-1 text-xs font-bold text-bad">Banned</span> : <span className="text-xs font-bold text-okt">Active</span>}</td>

@@ -1,21 +1,6 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { naira, nairaShort, walkText } from "../utils/format";
-
-// OAU main campus, same point the backend measures distance from
-const CAMPUS = { lat: 7.5186, lng: 4.5225 };
-
-// rough direction of each area from campus, in degrees clockwise from north.
-// used when a listing has no lat/lng; the distance always comes from the listing.
-const BEARING = {
-  fajuyi: 35,
-  parakin: 95,
-  damico: 145,
-  lagere: 190,
-  modomo: 220,
-  mayfair: 255,
-  asherifa: 305,
-};
+import { CAMPUS, fmtKm, kmBetween, naira, nairaShort, placeOf, walkText } from "../utils/format";
 
 const W = 600;
 const H = 500;
@@ -30,21 +15,23 @@ const jitter = (id = "") => {
   return (h / 997 - 0.5) * 26; // about ±13 degrees
 };
 
-// where a listing sits relative to campus: bearing (deg) and distance (km)
-const locate = (l) => {
-  if (l.lat != null && l.lng != null) {
-    const north = (l.lat - CAMPUS.lat) * 110.57;
-    const east = (l.lng - CAMPUS.lng) * 111.32 * Math.cos((CAMPUS.lat * Math.PI) / 180);
-    const km = l.distanceFromCampusKm ?? Math.hypot(north, east);
-    return { bearing: ((Math.atan2(east, north) * 180) / Math.PI + 360) % 360, km };
-  }
-  const base = BEARING[(l.area || "").toLowerCase()] ?? (jitter(l.area) * 13 + 360) % 360;
-  return { bearing: (base + jitter(l._id) + 360) % 360, km: l.distanceFromCampusKm ?? 2 };
+// bearing (deg, clockwise from north) and distance (km) of a point from the centre
+const locate = (center, p) => {
+  const north = (p.lat - center.lat) * 110.57;
+  const east = (p.lng - center.lng) * 111.32 * Math.cos((center.lat * Math.PI) / 180);
+  return { bearing: ((Math.atan2(east, north) * 180) / Math.PI + 360) % 360, km: kmBetween(center, p) };
 };
 
-export default function CampusMap({ listings = [], className = "" }) {
-  const { pins, rings, maxKm } = useMemo(() => {
-    const placed = listings.map((l) => ({ l, ...locate(l) }));
+export default function CampusMap({ listings = [], center = CAMPUS, className = "" }) {
+  const atCampus = !center.source || center.source === "campus";
+  const { pins, rings, maxKm, campus } = useMemo(() => {
+    // only houses with a real pin; distance from the user when the backend sent it
+    const placed = listings
+      .filter((l) => l.lat != null && l.lng != null)
+      .map((l) => {
+        const at = locate(center, l);
+        return { l, ...at, km: l.distanceFromYouKm ?? at.km, bearing: (at.bearing + (at.km < 0.05 ? jitter(l._id) * 10 : 0) + 360) % 360 };
+      });
     const far = Math.max(3, ...placed.map((p) => p.km));
     const maxKm = Math.ceil(far + 0.4);
     const step = maxKm > 6 ? 2 : 1;
@@ -56,8 +43,18 @@ export default function CampusMap({ listings = [], className = "" }) {
       const r = Math.max(34, (p.km / maxKm) * R); // keep pins clear of the campus dot
       return { ...p, i, x: C.x + Math.sin(rad) * r, y: C.y - Math.cos(rad) * r };
     });
-    return { pins, rings, maxKm };
-  }, [listings]);
+    // campus gets its own marker when the map is centred on the user
+    let campus = null;
+    if (!atCampus) {
+      const c = locate(center, CAMPUS);
+      if (c.km <= maxKm) {
+        const rad = (c.bearing * Math.PI) / 180;
+        const r = (c.km / maxKm) * R;
+        campus = { x: C.x + Math.sin(rad) * r, y: C.y - Math.cos(rad) * r, km: c.km };
+      }
+    }
+    return { pins, rings, maxKm, campus };
+  }, [listings, center.lat, center.lng]);
 
   // one label per area, under its first pin, or above it if another pin is in the way
   const clash = (x, y, self) =>
@@ -69,7 +66,7 @@ export default function CampusMap({ listings = [], className = "" }) {
     if (seen.has(key)) continue;
     seen.add(key);
     const y = !clash(p.x, p.y + 28, p) ? p.y + 22 : !clash(p.x, p.y - 28, p) ? p.y - 38 : null;
-    if (y != null) areaLabels.push({ name: p.l.area, x: p.x, y });
+    if (y != null) p.l.area && areaLabels.push({ name: p.l.area, x: p.x, y });
   }
 
   const pct = (x, y) => ({ left: `${(x / W) * 100}%`, top: `${(y / H) * 100}%` });
@@ -145,8 +142,16 @@ export default function CampusMap({ listings = [], className = "" }) {
         </g>
 
         <text x={C.x} y={C.y - 20} textAnchor="middle" fontSize="13" fontWeight="800" letterSpacing="3" fill="var(--maptext)" opacity="0.7">
-          OAU CAMPUS
+          {atCampus ? "OAU CAMPUS" : "YOU"}
         </text>
+        {campus && (
+          <g transform={`translate(${campus.x} ${campus.y})`}>
+            <rect x="-22" y="-11" width="44" height="22" rx="7" fill="var(--color-sf)" stroke="var(--ring)" />
+            <text y="4" textAnchor="middle" fontSize="11" fontWeight="800" letterSpacing="1.5" fill="var(--maptext)">
+              OAU
+            </text>
+          </g>
+        )}
       </svg>
 
       {/* you are here */}
@@ -171,7 +176,7 @@ export default function CampusMap({ listings = [], className = "" }) {
             to={`/listings/${p.l._id}`}
             style={{ ...pct(p.x, p.y), animationDelay: `${p.i * 90}ms` }}
             className="map-pin group absolute z-10 -translate-x-1/2 -translate-y-1/2 hover:z-20 focus-visible:z-20"
-            aria-label={`${p.l.title}, ${naira(p.l.totalCost)}, ${p.km} km from campus`}
+            aria-label={`${p.l.title}, ${naira(p.l.totalCost)}, ${p.km.toFixed(1)} km from ${atCampus ? "campus" : "you"}`}
           >
             {/* pulse when the sweep passes this pin */}
             <span
@@ -190,7 +195,7 @@ export default function CampusMap({ listings = [], className = "" }) {
             >
               <span className="block truncate text-sm font-bold text-ink">{p.l.title}</span>
               <span className="mt-0.5 block text-xs text-mut">
-                {p.l.area} · {p.km} km · {walkText(p.km)}
+                {placeOf(p.l)} · {fmtKm(p.km)} {atCampus ? "to campus" : "from you"} · {walkText(p.km)}
               </span>
               <span className="mt-1.5 block text-sm font-bold text-tealt">{naira(p.l.totalCost)} all-in</span>
             </span>
@@ -207,7 +212,7 @@ export default function CampusMap({ listings = [], className = "" }) {
         Live · {pins.length} {pins.length === 1 ? "house" : "houses"}
       </div>
       <div className="absolute bottom-4 right-4 hidden rounded-full sm:block border border-glassline bg-glass px-3 py-1.5 text-xs font-semibold text-mut backdrop-blur">
-        Rings = km from campus
+        Rings = km from {atCampus ? "campus" : "you"}
       </div>
     </div>
   );

@@ -7,7 +7,9 @@ import { Avatar, EmptyState, ErrorNote, Icon, LightBadge, Photo, Rating, Spinner
 import { useAuth } from "../context/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import { useToast } from "../context/ToastContext";
-import { confirmedText, ELECTRICITY, fmtDate, has24Light, naira, RENT_PERIODS, roomLabel, walkText } from "../utils/format";
+import { confirmedText, ELECTRICITY, fmtDate, fmtKm, has24Light, kmBetween, naira, placeOf, RENT_PERIODS, roomLabel, walkText } from "../utils/format";
+import { ResultsMap } from "../components/MapView";
+import { useUserLocation } from "../context/LocationContext";
 import useAmenities, { labelFrom } from "../utils/useAmenities";
 import Select from "../components/Select";
 
@@ -303,6 +305,7 @@ export default function ListingDetails() {
   const [photo, setPhoto] = useState(0);
   const [reporting, setReporting] = useState(false);
   const amenityList = useAmenities();
+  const { loc: userLoc } = useUserLocation();
 
   const load = () =>
     api
@@ -327,7 +330,12 @@ export default function ListingDetails() {
   const { listing, costBreakdown } = data;
   const agent = listing.agent || {};
   const verified = agent.agentInfo?.verificationStatus === "approved";
-  const photos = listing.photos?.length ? listing.photos : [null];
+  // photos and videos in one gallery
+  const media = [...(listing.photos || []).map((src) => ({ type: "photo", src })), ...(listing.videos || []).map((src) => ({ type: "video", src }))];
+  if (!media.length) media.push({ type: "photo", src: null });
+  const current = media[Math.min(photo, media.length - 1)];
+  const fromYou =
+    userLoc && userLoc.source !== "campus" && listing.lat != null && listing.lng != null ? kmBetween(userLoc, { lat: listing.lat, lng: listing.lng }) : null;
 
   const onCompare = () => {
     if (!compare.toggle(listing)) toast("You can compare up to 4 houses", "error");
@@ -341,17 +349,30 @@ export default function ListingDetails() {
 
       {/* gallery */}
       <div className="mt-4 grid gap-3 md:grid-cols-[2fr_1fr]">
-        <Photo src={photos[photo]} alt={listing.title} className="aspect-[16/10] w-full rounded-[28px]" />
-        {photos.length > 1 && (
+        {current.type === "video" ? (
+          <video key={current.src} src={current.src} controls playsInline preload="metadata" className="aspect-[16/10] w-full rounded-[28px] bg-night" />
+        ) : (
+          <Photo src={current.src} alt={listing.title} className="aspect-[16/10] w-full rounded-[28px]" />
+        )}
+        {media.length > 1 && (
           <div className="grid grid-cols-4 gap-3 md:grid-cols-2 md:content-start">
-            {photos.map((p, i) => (
+            {media.map((m, i) => (
               <button
-                key={i}
+                key={m.src || i}
                 onClick={() => setPhoto(i)}
-                aria-label={`Photo ${i + 1}`}
-                className={`overflow-hidden rounded-2xl ring-offset-2 ring-offset-bg ${photo === i ? "ring-2 ring-teal" : "opacity-80 hover:opacity-100"}`}
+                aria-label={m.type === "video" ? `Video tour ${i + 1}` : `Photo ${i + 1}`}
+                className={`relative overflow-hidden rounded-2xl ring-offset-2 ring-offset-bg ${photo === i ? "ring-2 ring-teal" : "opacity-80 hover:opacity-100"}`}
               >
-                <Photo src={p} className="aspect-[4/3] w-full" />
+                {m.type === "video" ? (
+                  <>
+                    <video src={m.src} muted playsInline preload="metadata" className="aspect-[4/3] w-full bg-night object-cover" />
+                    <span className="absolute inset-0 grid place-items-center">
+                      <span className="grid h-10 w-10 place-items-center rounded-full bg-night/75 text-lg text-onteal">▶</span>
+                    </span>
+                  </>
+                ) : (
+                  <Photo src={m.src} className="aspect-[4/3] w-full" />
+                )}
               </button>
             ))}
           </div>
@@ -363,18 +384,25 @@ export default function ListingDetails() {
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={listing.status} />
-            {has24Light(listing) && <LightBadge />}
+            {has24Light(listing) ? (
+              <LightBadge />
+            ) : listing.electricity24 === false ? (
+              <span className="rounded-full bg-rnb px-2.5 py-1 text-xs font-bold text-rnt">No 24hrs light</span>
+            ) : null}
+            {listing.videos?.length > 0 && <span className="rounded-full bg-night px-2.5 py-1 text-xs font-bold text-onteal">🎥 Video tour</span>}
             <span className="rounded-full border border-line bg-sf px-3 py-1 text-xs font-semibold text-mut">{confirmedText(listing.lastConfirmedAt)} by the agent</span>
           </div>
           <h1 className="h-serif mt-3 text-[clamp(32px,4vw,50px)] leading-[1.08]">{listing.title}</h1>
           <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-mut">
             <span className="inline-flex items-center gap-1">
               <Icon name="pin" size={16} /> {listing.address ? `${listing.address}, ` : ""}
-              {listing.area}
+              {placeOf(listing)}
+              {listing.landmark && listing.area ? ` (${listing.landmark})` : ""}
             </span>
+            {fromYou != null && <span className="font-bold text-tealt">{fmtKm(fromYou)} from you</span>}
             {listing.distanceFromCampusKm != null && (
               <span>
-                {listing.distanceFromCampusKm} km to campus · {walkText(listing.distanceFromCampusKm)}
+                {fmtKm(listing.distanceFromCampusKm)} to campus · {walkText(listing.distanceFromCampusKm)}
               </span>
             )}
             <Rating value={listing.avgRating} count={listing.reviewCount} />
@@ -430,6 +458,24 @@ export default function ListingDetails() {
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {listing.lat != null && listing.lng != null && (
+            <section>
+              <h2 className="h-serif mb-4 text-[28px]">Location</h2>
+              <ResultsMap listings={[listing]} you={userLoc} className="h-72" />
+              <p className="mt-2 text-sm text-mut">
+                {listing.landmark ? `${listing.landmark}. ` : ""}
+                <a
+                  href={`https://www.openstreetmap.org/?mlat=${listing.lat}&mlon=${listing.lng}#map=18/${listing.lat}/${listing.lng}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-tealt hover:underline"
+                >
+                  Open in a map app
+                </a>
+              </p>
             </section>
           )}
 

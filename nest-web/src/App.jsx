@@ -23,6 +23,7 @@ import AdminAgents from "./pages/admin/AdminAgents";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminListings from "./pages/admin/AdminListings";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminAdmins from "./pages/admin/AdminAdmins";
 
 export default function App() {
   return (
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/admin/users" element={<AdminUsers />} />
           <Route path="/admin/listings" element={<AdminListings />} />
           <Route path="/admin/reports" element={<AdminReports />} />
+          <Route path="/admin/admins" element={<AdminAdmins />} />
         </Route>
       </Route>
 

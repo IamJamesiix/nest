@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth, homeFor } from "../context/AuthContext";
 import { useCompare } from "../context/CompareContext";
@@ -89,11 +89,17 @@ const MENUS = {
     { to: "/admin/users", label: "Users", icon: "users" },
     { to: "/admin/listings", label: "All listings", icon: "home" },
     { to: "/admin/reports", label: "Reports", icon: "flag" },
+    { to: "/admin/admins", label: "Admins & roles", icon: "users" },
   ],
 };
 
 export function DashboardLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, refresh } = useAuth();
+
+  // pick up changes made by an admin (approval, role, ban) when a dashboard opens
+  useEffect(() => {
+    refresh().catch(() => {});
+  }, []);
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   if (!user) return null;

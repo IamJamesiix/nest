@@ -98,7 +98,7 @@ export default function AgentInspections() {
                   <StatusBadge status={i.status} />
                 </div>
                 <p className="mt-0.5 text-sm text-mut">
-                  {i.listing?.title} · {i.listing?.area}
+                  {i.listing?.title} · {i.listing?.area || i.listing?.landmark || "Near OAU"}
                 </p>
                 <p className="mt-1 text-sm">
                   Asked for <span className="font-semibold">{fmtDateTime(i.requestedDate)}</span>

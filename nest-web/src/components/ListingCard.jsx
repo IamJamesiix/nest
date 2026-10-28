@@ -4,7 +4,7 @@ import api, { errMsg } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useCompare } from "../context/CompareContext";
 import { useToast } from "../context/ToastContext";
-import { confirmedText, has24Light, naira, PERIOD_SHORT, roomLabel, walkText } from "../utils/format";
+import { confirmedText, fmtKm, has24Light, hasVideo, naira, PERIOD_SHORT, placeOf, roomLabel, walkText } from "../utils/format";
 import { Icon, LightBadge, Photo, Rating, StatusBadge, VerifiedBadge } from "./ui";
 
 // bookmark state + toggle, shared by cards and the details page
@@ -54,6 +54,9 @@ export default function ListingCard({ listing, showCompare = true }) {
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
           <StatusBadge status={listing.status} className="shadow-sm" />
           {has24Light(listing) && <LightBadge className="shadow-sm" />}
+          {hasVideo(listing) && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-night/85 px-2.5 py-1 text-xs font-bold text-onteal shadow-sm">🎥 Video tour</span>
+          )}
         </div>
         <button
           onClick={toggle}
@@ -69,7 +72,7 @@ export default function ListingCard({ listing, showCompare = true }) {
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-center justify-between gap-2 text-[13px] text-mut">
           <span className="font-semibold">
-            {roomLabel(listing.roomType)} in {listing.area}
+            {roomLabel(listing.roomType)} · {placeOf(listing)}
           </span>
           <Rating value={listing.avgRating} count={listing.reviewCount} />
         </div>
@@ -79,9 +82,14 @@ export default function ListingCard({ listing, showCompare = true }) {
         </Link>
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-mut">
+          {listing.distanceFromYouKm != null && (
+            <span className="inline-flex items-center gap-1 font-bold text-tealt">
+              <Icon name="pin" size={14} /> {fmtKm(listing.distanceFromYouKm)} from you
+            </span>
+          )}
           {listing.distanceFromCampusKm != null && (
-            <span className="inline-flex items-center gap-1">
-              <Icon name="pin" size={14} /> {listing.distanceFromCampusKm} km · {walkText(listing.distanceFromCampusKm)}
+            <span>
+              {fmtKm(listing.distanceFromCampusKm)} to campus · {walkText(listing.distanceFromCampusKm)}
             </span>
           )}
           {listing.isShared && <span className="font-semibold text-tealt">Shareable</span>}

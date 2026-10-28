@@ -4,7 +4,9 @@ import api from "../api/client";
 import CampusMap from "../components/CampusMap";
 import ListingCard from "../components/ListingCard";
 import { EmptyState, Icon, Spinner } from "../components/ui";
-import { AREAS, naira, roomLabel } from "../utils/format";
+import { CAMPUS, naira, roomLabel } from "../utils/format";
+import { LocationPanel } from "../components/LocationPanel";
+import { useUserLocation } from "../context/LocationContext";
 import Select from "../components/Select";
 
 const FEATURES = [
@@ -22,14 +24,27 @@ export default function Home() {
   const [budget, setBudget] = useState("");
   const [roomType, setRoomType] = useState("");
   const [withMate, setWithMate] = useState(false);
+  const [areas, setAreas] = useState([]);
+  const { loc } = useUserLocation();
+  const center = loc || { ...CAMPUS, source: "campus" };
 
+  // houses near the user (or near OAU until they share their location)
   useEffect(() => {
+    let live = true;
+    setLoading(true);
     api
-      .get("/listings", { params: { limit: 12, sort: "newest" } })
-      .then((res) => setListings(res.data.listings))
-      .catch(() => setListings([]))
-      .finally(() => setLoading(false));
-  }, []);
+      .get("/listings", { params: { lat: center.lat, lng: center.lng, radiusKm: 10, limit: 12 } })
+      .then((res) => live && setListings(res.data.listings))
+      .catch(() => live && setListings([]))
+      .finally(() => live && setLoading(false));
+    api
+      .get("/listings/areas/nearby", { params: { lat: center.lat, lng: center.lng, radiusKm: 10 } })
+      .then((res) => live && setAreas(res.data.areas || []))
+      .catch(() => live && setAreas([]));
+    return () => {
+      live = false;
+    };
+  }, [center.lat, center.lng]);
 
   const search = (e) => {
     e.preventDefault();
@@ -92,7 +107,7 @@ export default function Home() {
                 label="Area"
                 value={area}
                 onChange={setArea}
-                options={[{ value: "", label: "Any area" }, ...AREAS]}
+                options={[{ value: "", label: areas.length ? "Any area" : "No areas yet" }, ...areas.map((a) => ({ value: a.area, label: `${a.area} · ${a.houses}` }))]}
               />
             </div>
             <label className="flex min-w-[120px] flex-1 flex-col gap-1 rounded-2xl border-line px-4 py-2 text-xs font-semibold text-mut sm:border-l">
@@ -141,17 +156,19 @@ export default function Home() {
               </Link>
             ))}
           </div>
+
+          <LocationPanel className="mt-5" />
         </div>
 
         <div className="relative">
-          <CampusMap listings={listings} className="aspect-[6/5] shadow-soft" />
+          <CampusMap listings={listings} center={center} className="aspect-[6/5] shadow-soft" />
           <div className="absolute left-5 top-5 hidden items-center gap-3 rounded-2xl sm:flex border border-glassline bg-glass px-4 py-3 backdrop-blur">
             <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal text-gold">
               <Icon name="pin" />
             </span>
             <div>
-              <p className="text-sm font-bold">Houses around campus</p>
-              <p className="text-xs text-mut">{cheapest ? `From ${naira(cheapest)} all-in` : "Loading houses"}</p>
+              <p className="text-sm font-bold">{center.source === "campus" ? "Houses around OAU" : "Houses around you"}</p>
+              <p className="text-xs text-mut">{loading ? "Finding houses…" : cheapest ? `From ${naira(cheapest)} all-in` : "No houses within 10 km yet"}</p>
             </div>
           </div>
         </div>
@@ -176,8 +193,8 @@ export default function Home() {
       <section className="mx-auto max-w-[1320px] px-6 pt-16">
         <div className="flex flex-wrap items-end justify-between gap-4 border-b border-line pb-6">
           <div>
-            <h2 className="h-serif text-[clamp(32px,4vw,48px)] leading-tight">Houses students are looking at now</h2>
-            <p className="mt-2 text-mut">Recently listed or reconfirmed by verified agents.</p>
+            <h2 className="h-serif text-[clamp(32px,4vw,48px)] leading-tight">{center.source === "campus" ? "Houses near OAU" : "Houses near you"}</h2>
+            <p className="mt-2 text-mut">Nearest first, from verified agents.</p>
           </div>
           <Link to="/listings" className="btn btn-ghost">
             See all houses
@@ -193,7 +210,15 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No houses yet" text="Once agents post houses, they'll show up here. Make sure the API is running." />
+            <EmptyState
+              title={center.source === "campus" ? "No houses near OAU yet" : "No houses near you yet"}
+              text="Verified agents are adding houses. Check back soon, or try a wider search."
+              action={
+                <Link to="/listings?radiusKm=50" className="btn btn-gold">
+                  Search further away
+                </Link>
+              }
+            />
           )}
         </div>
       </section>

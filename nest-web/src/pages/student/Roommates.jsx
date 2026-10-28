@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api, { errMsg } from "../../api/client";
 import { Avatar, EmptyState, ErrorNote, Icon, Modal, PageTitle, Spinner } from "../../components/ui";
 import { useToast } from "../../context/ToastContext";
-import { AREAS, cap, naira } from "../../utils/format";
+import { cap, naira } from "../../utils/format";
 import Select from "../../components/Select";
 
 const EMPTY = {
@@ -37,12 +37,7 @@ function ProfileForm({ profile, onSaved, onClose }) {
   const [busy, setBusy] = useState(false);
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
-  const toggleArea = (a) => {
-    const list = form.preferredAreas.split(",").map((s) => s.trim()).filter(Boolean);
-    const has = list.some((x) => x.toLowerCase() === a.toLowerCase());
-    const next = has ? list.filter((x) => x.toLowerCase() !== a.toLowerCase()) : [...list, a];
-    setForm({ ...form, preferredAreas: next.join(", ") });
-  };
+
 
   const submit = async (e) => {
     e.preventDefault();
@@ -73,7 +68,6 @@ function ProfileForm({ profile, onSaved, onClose }) {
     }
   };
 
-  const chosen = form.preferredAreas.toLowerCase();
 
   return (
     <form onSubmit={submit} className="space-y-4">
@@ -93,19 +87,10 @@ function ProfileForm({ profile, onSaved, onClose }) {
       </div>
 
       <div>
-        <span className="label">Areas I like</span>
-        <div className="flex flex-wrap gap-2">
-          {AREAS.map((a) => (
-            <button
-              type="button"
-              key={a}
-              onClick={() => toggleArea(a)}
-              className={`rounded-full border px-3 py-1.5 text-[13px] font-semibold ${chosen.includes(a.toLowerCase()) ? "border-teal bg-teal text-onteal" : "border-line bg-sf"}`}
-            >
-              {a}
-            </button>
-          ))}
-        </div>
+        <label className="label" htmlFor="areas">
+          Areas I like (comma separated)
+        </label>
+        <input id="areas" className="input" value={form.preferredAreas} onChange={set("preferredAreas")} placeholder="e.g. Mayfair, Damico" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -237,6 +222,13 @@ export default function Roommates() {
   const [profile, setProfile] = useState(undefined); // undefined = loading, null = none
   const [matches, setMatches] = useState(null);
   const [filters, setFilters] = useState({ maxBudget: "", area: "", gender: "", hasHouse: "" });
+  const [areaText, setAreaText] = useState("");
+
+  // typed area filter, applied after a short pause
+  useEffect(() => {
+    const t = setTimeout(() => setFilters((f) => (f.area === areaText.trim().toLowerCase() ? f : { ...f, area: areaText.trim().toLowerCase() })), 500);
+    return () => clearTimeout(t);
+  }, [areaText]);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState("");
 
@@ -309,11 +301,12 @@ export default function Roommates() {
       {/* filters */}
       <div className="mb-6 grid gap-3 sm:grid-cols-4">
         <input className="input" inputMode="numeric" placeholder="Max budget ₦" value={filters.maxBudget} onChange={(e) => setFilters({ ...filters, maxBudget: e.target.value.replace(/\D/g, "") })} />
-        <Select
-          label="Area"
-          value={filters.area}
-          onChange={(v) => setFilters({ ...filters, area: v })}
-          options={[{ value: "", label: "Any area" }, ...AREAS.map((a) => ({ value: a.toLowerCase(), label: a }))]}
+        <input
+          className="input"
+          aria-label="Area"
+          placeholder="Area, e.g. Mayfair"
+          value={areaText}
+          onChange={(e) => setAreaText(e.target.value)}
         />
         <Select
           label="Gender"
